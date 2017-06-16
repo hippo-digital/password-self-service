@@ -1,0 +1,109 @@
+body {
+	margin: 0px;
+	font-family: 'Ubuntu', sans-serif;
+}
+
+h1 {
+	margin: 0px;
+}
+
+a {
+	color: white;
+}
+
+/*input:hover {
+	border: solid magenta 3px;
+}*/
+
+input, button {
+	font-size: 1.2em;
+	padding: 8px 12px 8px 12px;
+	border: solid 1px #e0e0e0;
+	font-family: 'Ubuntu', sans-serif;
+}
+
+input {
+	margin: 10px;
+	margin-left: 5px;
+	border-radius: 3px;
+	min-width: 300px;
+}
+
+input: hover{}
+
+button {
+	background-color: #007599;
+	border: solid #404040 0px;
+	border-bottom: solid #404040 3px;
+	color: white;
+	box-shadow: 0px 0px 5px #ffffd0;
+	border-radius: 1px;
+}
+
+button:hover {
+	background-color: #0090B9;
+	box-shadow: 0px 0px 5px #a0cfff;
+}
+
+.header {
+}
+
+.headerwrap {
+	background-color: #007599;
+	border-bottom: solid 3px #404040;
+}
+
+.body {
+	height: auto;
+	text-align: left;
+}
+
+.bodywrap {
+}
+
+.footer {
+	font-size: 0.7em;
+}
+
+.footerwrap {
+	background-color: #404040;
+	bottom: 0;
+	position: absolute;
+	width: 100%;
+}
+
+.header, .footer, .body {
+	width: 1000px;
+	margin-right: auto;
+	margin-left: auto;
+	padding: 10px;
+}
+
+.header, .footer {
+	color: white;
+}
+
+
+.headerwrap, .footerwrap, .bodywrap {
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+.navbuttons {
+	padding-top: 50px;
+}
+
+.error {
+    color: red;
+}
+
+
+@media (max-width: 1040px) {
+	.header, .footer, .body {
+		width: 95%;
+		padding: 10px;
+	}
+}
+
+
+
