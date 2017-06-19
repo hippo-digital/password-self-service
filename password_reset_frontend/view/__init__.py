@@ -40,29 +40,49 @@ def username():
 def code():
     username=request.form['username']
 
-    storage.rpush('code_requests', username)
+    id = get_new_id()
+    storage.rpush('code_requests', json.dumps({'username': username, 'id': id}))
 
-    return fields_render('code', {'username': username})
+
+    code = None
+    timeout_counter = 0
+
+    while code == None and timeout_counter < 30:
+        timeout_counter += 1
+        time.sleep(1)
+        response_raw = storage.hget('code_responses', id)
+
+        if response_raw != None:
+            code = response_raw
+
+            return fields_render('code', {'username': username, 'id': id, 'code_hash': code})
+
+
+    return fields_render('failed', fields={'message': res['message']})
 
 @app.route('/password', methods=['POST'])
 def password():
-    username=request.form['username']
-    code=request.form['code']
+    username = request.form['username']
+    code = request.form['code']
+    code_hash = request.form['code_hash']
+    id = request.form['id']
 
-    return fields_render('password', {'username': username, 'code': code})
+    return fields_render('password', {'username': username, 'code': code, 'code_hash': code_hash, 'id': id})
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    username=request.form['username']
-    code=request.form['code']
-    password=request.form['password']
-    password_confirm=request.form['password-confirm']
+    username = request.form['username']
+    code = request.form['code']
+    code_hash = request.form['code_hash']
+    id = request.form['id']
+    password = request.form['password']
+    password_confirm = request.form['password-confirm']
 
     if password != password_confirm:
         return 'Passwords do not match'
 
-    id = get_new_id()
-    storage.rpush('reset_requests', json.dumps({'id': id, 'username': username, 'code': code, 'password': password}))
+
+    storage.rpush('reset_requests', json.dumps({'id': id, 'username': username, 'code': code, 'code_hash': code_hash, 'password': password}))
 
     res = {}
     timeout_counter = 0
@@ -111,6 +131,19 @@ def resetresponse(id, status):
 
     if status == 'Failed':
         storage.hset('reset_responses', id, json.dumps({'status': 'Failed', 'message': request.data.decode('utf-8')}))
+
+    return 'OK'
+
+@app.route('/coderesponse/<id>/<status>', methods=['POST'])
+def coderesponse(id, status):
+    if len(id) != 12:
+        return 500
+
+    if status == 'OK':
+        storage.hset('code_responses', id, request.data.decode('utf-8'))
+
+    if status == 'Failed':
+        storage.hset('code_responses', id, json.dumps({'status': 'Failed', 'message': request.data.decode('utf-8')}))
 
     return 'OK'
 
