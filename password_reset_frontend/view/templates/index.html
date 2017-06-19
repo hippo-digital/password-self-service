@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title></title>
+	<meta charset="utf-8">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600' rel='stylesheet' type='text/css'> -->
+	<link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+	<link rel="stylesheet" href="static/css/default.css">
+	<!-- <link rel="stylesheet" href="css/coloured.css"> -->
+
+</head>
+
+
+
+<body>
+
+
+
+<div class="headerwrap">
+	<div class="header">
+		<h1>Password Self-Service</h1>
+	</div>
+</div>
+
+
+
+<div class="bodywrap">
+	<div class="body">
+		<h2 id="pageTitleText">Recover your login account</h2>
+
+		{{ body | safe }}
+
+	</div>
+</div>
+
+
+
+<div class="footerwrap">
+	<div class="footer">Developed by <a href="http://www.hippodigital.co.uk">Hippo Digital Ltd.</a></div>
+</div>
+
+
+
+</body>
+
+  <script>
+      var titleText = document.getElementById('pageTitle').title;
+      var titleControl = document.getElementById('pageTitleText');
+      titleControl.innerHTML = titleText;
+
+      function protoNavAction(ctrl)
+      {
+          window.location.href='/' + ctrl.value;
+      }
+  </script>
+
+</html>
+
