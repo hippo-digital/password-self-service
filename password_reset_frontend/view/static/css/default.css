@@ -49,8 +49,12 @@ button:hover {
 }
 
 .headerwrap {
-	background-color: #007599;
+	background-color: #ffffff;
 	border-bottom: solid 3px #404040;
+}
+
+.headerlogo {
+    height: 60px;
 }
 
 .body {
@@ -79,7 +83,11 @@ button:hover {
 	padding: 10px;
 }
 
-.header, .footer {
+.header {
+    color: #303030;
+}
+
+.footer {
 	color: white;
 }
 
