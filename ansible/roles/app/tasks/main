@@ -60,7 +60,7 @@
   file: path=/etc/hippo-{{ type }} state=directory mode=0755
 
 - name: Set app directory permissions
-  file: path=/home/{{ type }}service/open-id-connect state=directory owner={{ type }}service group={{ type }}service recurse=yes
+  file: path=/home/{{ type }}service/password-self-service state=directory owner={{ type }}service group={{ type }}service recurse=yes
 
 - name: IDP Config
   template: src=hippo-{{ type }} dest=/etc/nginx/sites-available/hippo-{{ type }} mode=0644
