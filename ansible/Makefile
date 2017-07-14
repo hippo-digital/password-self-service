@@ -22,10 +22,7 @@ endif
 
 # environment configuration
 # -------------------------
-install-idp:
+install-frontend:
 	export ANSIBLE_HOST_KEY_CHECKING=False
-	ansible-playbook -i inventories/main --limit $(limit) install_idp.yml -u user1 --sudo --ask-pass --ask-sudo-pass $(params)
+	ansible-playbook -i inventories/main --limit $(limit) install_frontend.yml -u user1 --sudo --ask-pass --ask-sudo-pass $(params)
 
-install-ldap:
-	export ANSIBLE_HOST_KEY_CHECKING=False
-	ansible-playbook -i inventories/main --limit $(limit) install_ldap.yml -u user1 --sudo --ask-pass --ask-sudo-pass $(params)
