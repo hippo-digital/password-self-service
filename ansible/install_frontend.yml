@@ -1,0 +1,19 @@
+---
+
+# Required infrastructure
+# -----------------------
+
+- hosts: all
+  user: ubuntu
+  roles:
+   - base
+   - app
+   - iptables
+   - ssh
+  vars:
+    - type: pwd
+    - enable_sshd_timeout: true
+    - iptables_inbound_ports:
+      - { protocol: 'tcp', port: 443 }
+
+

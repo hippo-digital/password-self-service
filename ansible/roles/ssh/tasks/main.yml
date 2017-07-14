@@ -1,0 +1,5 @@
+---
+- name: 'Apply SSH config file'
+  template: src=sshd_config.j2 dest=/etc/ssh/sshd_config mode=0644 owner=root group=root
+  notify:
+    - restart sshd

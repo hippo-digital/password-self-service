@@ -1,0 +1,96 @@
+---
+- name: Install Redis
+  apt: name=redis-server state=present
+
+- name: Update APT cache
+  apt: update_cache=yes
+
+- name: Install NGINX
+  apt: name=nginx state=present
+
+- name: Install Python3
+  apt: name=python3 state=present
+
+- name: Install Pip3
+  apt: name=python3-pip state=present
+
+- name: Install Python3 Dev
+  apt: name=python3-dev state=present
+
+- name: Install GIT
+  apt: name=git state=present
+
+- name: Create service user
+  user: name={{ type }}service
+
+- name: Clone application repo
+  git: repo=https://github.com/hippodigital/password-self-service.git dest=/home/{{ type }}service/password-self-service
+
+- name: Install VirtualEnv
+  pip: name=virtualenv state=present executable=pip3
+
+- name: Install PyYAML
+  pip: name=pyyaml state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+
+- name: Install Requests
+  pip: name=requests state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+
+- name: Install PyRedis
+  pip: name=redis state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+
+- name: Install UWSGI
+  pip: name=uwsgi state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+
+- name: Install Flask
+  pip: name=flask state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+
+- name: Install LDAP3
+  pip: name=ldap3 state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+
+- name: Install Jose JWT
+  pip: name=python-jose state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+
+- name: Create IDP Socket directory
+  file: path=/var/hippo-{{ type }} state=directory mode=0777
+
+- name: Create IDP Logs directory
+  file: path=/var/log/hippo-{{ type }} state=directory mode=0777
+
+- name: Create IDP Config directory
+  file: path=/etc/hippo-{{ type }} state=directory mode=0755
+
+- name: Set app directory permissions
+  file: path=/home/{{ type }}service/open-id-connect state=directory owner={{ type }}service group={{ type }}service recurse=yes
+
+- name: IDP Config
+  template: src=hippo-idp dest=/etc/nginx/sites-available/hippo-{{ type }} mode=0644
+
+- name: IDP Service Config
+  template: src=hippo-idp.service dest=/etc/systemd/system/hippo-{{ type }}.service mode=0755
+
+- name: SSL Private Key
+  copy: src=login.hippo.digital.key dest=/etc/hippo-{{ type }} mode=0600
+
+- name: SSL Certificate
+  copy: src=login.hippo.digital.pem dest=/etc/hippo-{{ type }} mode=0600
+
+- name: Basic config.yml
+  template: src=config-{{ type }}.yml dest=/etc/hippo-{{ type }}/config.yml mode=0644
+
+- name: Basic clients.yml
+  template: src=clients.yml dest=/etc/hippo-{{ type }} mode=0644
+
+- name: Create symlink to login.hippo.digital
+  file: src=/etc/nginx/sites-available/hippo-{{ type }} dest=/etc/nginx/sites-enabled/hippo-{{ type }} state=link
+  #notify: nginx reload
+
+- name: Create hippo-idp service (1)
+  command: systemctl enable hippo-{{ type }}
+
+- name: Create hippo-idp service (2)
+  command: systemctl start hippo-{{ type }}
+
+- name: Restart nginx
+  command: service nginx restart
+
+

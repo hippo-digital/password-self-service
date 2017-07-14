@@ -1,0 +1,29 @@
+---
+# Basic configuration for the IDP
+issuer:
+    # The base URL for the published IDP service, i.e. where clients will be pointed to
+    address: https://login.hippo.digital
+
+
+# URL for the LDAP GetUserDetails service
+idservice:
+    address: http://localhost:5001/getuserdetails
+
+
+# Configuration for connection to the Redis host.  In single server configurations this
+#  would normally be left in the default configuration of localhost:6379
+sessionstore:
+    address: localhost
+    port: 6379
+
+
+# Session configuration for the JW token
+session:
+    # The length of time in seconds that a login session will be valid for
+    jwtexpiryseconds: 28800
+
+
+# Configure the sub field of the token to be replaced with another ID field,
+#  or remove to use the username as to sub
+attributes:
+    subject: id_number
