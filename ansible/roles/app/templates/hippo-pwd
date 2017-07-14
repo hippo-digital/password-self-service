@@ -1,6 +1,6 @@
 server {
     listen 443;
-    server_name login.hippo.digital;
+    server_name pwd.hippo.digital;
 
     ssl on;
     ssl_certificate /etc/hippo-{{ type }}/login.hippo.digital.pem;
