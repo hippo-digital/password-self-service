@@ -30,25 +30,25 @@
   pip: name=virtualenv state=present executable=pip3
 
 - name: Install PyYAML
-  pip: name=pyyaml state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+  pip: name=pyyaml state=present virtualenv=/home/{{ type }}service/password-self-service/password_reset_frontend virtualenv_python=python3
 
 - name: Install Requests
-  pip: name=requests state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+  pip: name=requests state=present virtualenv=/home/{{ type }}service/password-self-service/password_reset_frontend virtualenv_python=python3
 
 - name: Install PyRedis
-  pip: name=redis state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+  pip: name=redis state=present virtualenv=/home/{{ type }}service/password-self-service/password_reset_frontend virtualenv_python=python3
 
 - name: Install UWSGI
-  pip: name=uwsgi state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+  pip: name=uwsgi state=present virtualenv=/home/{{ type }}service/password-self-service/password_reset_frontend virtualenv_python=python3
 
 - name: Install Flask
-  pip: name=flask state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+  pip: name=flask state=present virtualenv=/home/{{ type }}service/password-self-service/password_reset_frontend virtualenv_python=python3
 
 - name: Install LDAP3
-  pip: name=ldap3 state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+  pip: name=ldap3 state=present virtualenv=/home/{{ type }}service/password-self-service/password_reset_frontend virtualenv_python=python3
 
 - name: Install Jose JWT
-  pip: name=python-jose state=present virtualenv=/home/{{ type }}service/password-self-service/{{ type }}/web virtualenv_python=python3
+  pip: name=python-jose state=present virtualenv=/home/{{ type }}service/password-self-service/password_reset_frontend virtualenv_python=python3
 
 - name: Create IDP Socket directory
   file: path=/var/hippo-{{ type }} state=directory mode=0777
@@ -63,10 +63,10 @@
   file: path=/home/{{ type }}service/open-id-connect state=directory owner={{ type }}service group={{ type }}service recurse=yes
 
 - name: IDP Config
-  template: src=hippo-idp dest=/etc/nginx/sites-available/hippo-{{ type }} mode=0644
+  template: src=hippo-{{ type }} dest=/etc/nginx/sites-available/hippo-{{ type }} mode=0644
 
 - name: IDP Service Config
-  template: src=hippo-idp.service dest=/etc/systemd/system/hippo-{{ type }}.service mode=0755
+  template: src=hippo-{{ type }}.service dest=/etc/systemd/system/hippo-{{ type }}.service mode=0755
 
 - name: SSL Private Key
   copy: src=login.hippo.digital.key dest=/etc/hippo-{{ type }} mode=0600
