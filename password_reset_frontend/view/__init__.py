@@ -58,7 +58,7 @@ def code():
             return fields_render('code', {'username': username, 'id': id, 'code_hash': code})
 
 
-    return fields_render('failed', fields={'message': res['message']})
+    return fields_render('failed', fields={'message': 'Failed to get response from server'})
 
 @app.route('/password', methods=['POST'])
 def password():

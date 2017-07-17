@@ -45,9 +45,6 @@ button:hover {
 	box-shadow: 0px 0px 5px #a0cfff;
 }
 
-.header {
-}
-
 .headerwrap {
 	background-color: #ffffff;
 	border-bottom: solid 3px #404040;
@@ -76,11 +73,21 @@ button:hover {
 	width: 100%;
 }
 
+.header-title {
+    float: left;
+    padding-top: 0.5em;
+}
+
+.header-image {
+    float: right;
+}
+
 .header, .footer, .body {
 	width: 1000px;
 	margin-right: auto;
 	margin-left: auto;
 	padding: 10px;
+	height: 60px;
 }
 
 .header {
