@@ -54,6 +54,8 @@ def poll():
                     break
 
 def send_code(username, id):
+    log.info('Method=send_code, Username=%s, ID=%s' % (username, id))
+
     q = search_object.search_object()
     users = None
 
@@ -111,6 +113,12 @@ def send_sms(mobile_number, code):
 
 def reset_password(reset_request):
     if 'username' in reset_request and 'code' in reset_request and 'code_hash' in reset_request and 'id' in reset_request and 'password' in reset_request:
+        log.info('Method=reset_request, Username=%s, Code=%s, CodeHash=%s, ID=%s' % (
+            reset_request['username'],
+            reset_request['code'],
+            reset_request['code_hash'],
+            reset_request['id']))
+
         expected_hash = generate_code_hash(reset_request['username'], reset_request['code'], reset_request['id'])
 
         if expected_hash != reset_request['code_hash']:
@@ -122,6 +130,7 @@ def reset_password(reset_request):
         raise(Exception())
 
 def reset_ad_password(username, new_password):
+    log.info('Method=reset_ad_password, Username=%s' % username)
     q = search_object.search_object()
 
     try:
