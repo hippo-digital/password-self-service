@@ -1,0 +1,14 @@
+[Unit]
+Description=uWSGI instance to serve Hippo IDP
+After=network.target
+
+[Service]
+User={{ type }}service
+Group=www-data
+WorkingDirectory=/home/{{ type }}service/password-self-service/password_reset_frontend_receiver
+Environment="PATH=/home/{{ type }}service/password-self-service/password_reset_frontend_receiver/bin"
+ExecStart=/home/{{ type }}service/password-self-service/password_reset_frontend_receiver/bin/uwsgi --ini web.ini
+
+[Install]
+WantedBy=multi-user.target
+

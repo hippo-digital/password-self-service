@@ -2,7 +2,7 @@
 # Basic configuration for the IDP
 issuer:
     # The base URL for the published IDP service, i.e. where clients will be pointed to
-    address: https://login.hippo.digital
+    address: https://pwd.hippo.digital
 
 
 # URL for the LDAP GetUserDetails service

@@ -24,5 +24,5 @@ endif
 # -------------------------
 install-frontend:
 	export ANSIBLE_HOST_KEY_CHECKING=False
-	ansible-playbook -i inventories/main --limit $(limit) install_frontend.yml -u ubuntu --sudo --private-key=~/.ssh/aws_default.pem $(params)
+	ansible-playbook -i inventories/main --limit $(limit) install_frontend.yml -u ubuntu --sudo --private-key=$(key) $(params)
 
