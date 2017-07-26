@@ -79,17 +79,17 @@
 
 
 - name: IDP Config
-  template: src=hippo-{{ type }} dest=/etc/nginx/sites-available/hippo-{{ type }}-receiver mode=0644
+  template: src=hippo-{{ type }}-receiver dest=/etc/nginx/sites-available/hippo-{{ type }}-receiver mode=0644
 
 - name: IDP Config
-  template: src=hippo-{{ type }} dest=/etc/nginx/sites-available/hippo-{{ type }}-ui mode=0644
+  template: src=hippo-{{ type }}-ui dest=/etc/nginx/sites-available/hippo-{{ type }}-ui mode=0644
 
 
 - name: IDP Service Config
-  template: src=hippo-{{ type }}.service dest=/etc/systemd/system/hippo-{{ type }}-receiver.service mode=0755
+  template: src=hippo-{{ type }}-receiver.service dest=/etc/systemd/system/hippo-{{ type }}-receiver.service mode=0755
 
 - name: IDP Service Config
-  template: src=hippo-{{ type }}.service dest=/etc/systemd/system/hippo-{{ type }}-ui.service mode=0755
+  template: src=hippo-{{ type }}-ui.service dest=/etc/systemd/system/hippo-{{ type }}-ui.service mode=0755
 
 
 - name: SSL Private Key
