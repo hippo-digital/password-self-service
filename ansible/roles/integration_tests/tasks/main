@@ -1,0 +1,30 @@
+---
+- name: Install PyYAML
+  pip: name=pyyaml state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+
+- name: Install Requests
+  pip: name=requests state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+
+- name: Install PyRedis
+  pip: name=redis state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+
+- name: Install UWSGI
+  pip: name=uwsgi state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+
+- name: Install Flask
+  pip: name=flask state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+
+- name: Install dateutil
+  pip: name=python-dateutil state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+
+
+- name: Run Tests
+  shell: source bin/activate; python3 -m unittest tests_integration.py 
+  args:
+    chdir: /home/pwdservice/password-self-service/integration_tests 
+    executable: /bin/bash
+  become: yes 
+  become_user: pwdservice
+  
+
+

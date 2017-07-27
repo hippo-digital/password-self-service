@@ -26,3 +26,7 @@ install-frontend:
 	export ANSIBLE_HOST_KEY_CHECKING=False
 	ansible-playbook -i inventories/main --limit $(limit) install_frontend.yml -u ubuntu --sudo --private-key=$(key) $(params)
 
+integration-test:
+	export ANSIBLE_HOST_KEY_CHECKING=False
+	ansible-playbook -i inventories/main --limit $(limit) run_integration_tests.yml -u ubuntu --sudo --private-key=$(key) $(params)
+

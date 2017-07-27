@@ -9,7 +9,7 @@ import time
 
 class tests(unittest.TestCase):
     def setUp(self):
-        self.frontend_address = 'http://127.0.0.1:5000'
+        self.frontend_address = 'https://127.0.0.1'
 
     def get_code(self):
         sms_uri = 'https://rest.textmagic.com/api/v2/replies?limit=1'
@@ -61,7 +61,7 @@ class tests(unittest.TestCase):
                 'password': 'Wibble123!',
                 'password-confirm': 'Wibble123!'}
 
-        reset_response = requests.post(reset_uri, data=data)
+        reset_response = requests.post(reset_uri, data=data, verify=False)
 
         return 'You can now log in using the password you set.' in reset_response.content.decode('utf-8')
 
