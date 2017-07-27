@@ -93,7 +93,7 @@
 
 
 - name: SSL Private Key
-  copy: src=login.hippo.digital.key dest=/etc/hippo-{{ type }} mode=0600
+  copy: src=pwd.hippo.digital.key dest=/etc/hippo-{{ type }} mode=0600
 
 - name: SSL Certificate
   copy: src=pwd.hippo.digital.pem dest=/etc/hippo-{{ type }} mode=0600

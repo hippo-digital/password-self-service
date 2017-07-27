@@ -15,5 +15,6 @@
     - enable_sshd_timeout: true
     - iptables_inbound_ports:
       - { protocol: 'tcp', port: 443 }
+      - { protocol: 'tcp', port: 444 }
 
 
