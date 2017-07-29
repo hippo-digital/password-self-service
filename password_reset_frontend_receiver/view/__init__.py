@@ -4,9 +4,13 @@ import string
 import random
 from storage import storage
 import json
-
+from Crypto.PublicKey import RSA
+from Crypto import Random
+import base64
 
 app = Flask(__name__)
+public_key = None
+redis_db = 0
 
 
 @app.before_request
@@ -28,21 +32,14 @@ def log_request():
 
 @app.route('/requests')
 def requests():
-    user = ''
-    reset = ''
-    outstanding_requests = {'codes': [], 'resets': []}
+    req = ''
+    outstanding_requests = []
 
-    while user != None:
-        user = storage.lpop('code_requests')
+    while req != None:
+        req = storage.lpop('requests')
 
-        if user != None:
-            outstanding_requests['codes'].append(user)
-
-    while reset != None:
-        reset = storage.lpop('reset_requests')
-
-        if reset != None:
-            outstanding_requests['resets'].append(reset)
+        if req != None:
+            outstanding_requests.append(req)
 
     return json.dumps(outstanding_requests)
 
@@ -78,8 +75,18 @@ def coderesponse(id, status):
 
     return 'OK'
 
+def store_request(id, type, data):
+    to_encrypt = json.dumps({'id': id, 'type': type, 'request_content': data})
+    random_generator = Random.new().read
+    encrypted_data = public_key.encrypt(to_encrypt.encode('utf-8'), random_generator)
+    b64_encrypted_data = base64.b64encode(encrypted_data[0])
+
+    storage.rpush('requests', b64_encrypted_data)
+
+    None
+
 log = logging.getLogger('password_reset_frontend')
 
-storage()
+storage(db = redis_db)
 
 

@@ -65,7 +65,7 @@ class tests(unittest.TestCase):
 
         return 'You can now log in using the password you set.' in reset_response.content.decode('utf-8')
 
-    def test_whenUsernameIsSubmitted_aResetCodeIsSentViaSMS(self):
+    def test_whenUsernameIsSubmitted_aResettCodeIsSentViaSMS(self):
         code = self.get_code()['code']
 
         if code == None:
