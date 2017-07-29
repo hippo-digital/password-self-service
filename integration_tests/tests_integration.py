@@ -9,7 +9,7 @@ import time
 
 class tests(unittest.TestCase):
     def setUp(self):
-        self.frontend_address = 'http://127.0.0.1:5000'
+        self.frontend_address = 'https://127.0.0.1'
 
     def get_code(self):
         sms_uri = 'https://rest.textmagic.com/api/v2/replies?limit=1'
@@ -18,7 +18,7 @@ class tests(unittest.TestCase):
         code_requested = datetime.now(tz=tz.tzutc())
         message_timestamp = code_requested
 
-        response = requests.post(code_uri, data={'username': 'aaa'})
+        response = requests.post(code_uri, data={'username': 'test_user_1'}, verify=False)
         body = response.content.decode('utf-8')
 
         id_field_definition = re.search('(<input name=\"id\".*)', body).groups(0)[0]
@@ -53,15 +53,14 @@ class tests(unittest.TestCase):
     def reset_password(self, code, code_hash, id):
         reset_uri = '%s/reset' % self.frontend_address
 
-        data = {'username': 'aaa',
+        data = {'username': 'test_user_1',
                 'code': code,
                 'code_hash': code_hash,
                 'id': id,
-                'username': 'aaa',
                 'password': 'Wibble123!',
                 'password-confirm': 'Wibble123!'}
 
-        reset_response = requests.post(reset_uri, data=data)
+        reset_response = requests.post(reset_uri, data=data, verify=False)
 
         return 'You can now log in using the password you set.' in reset_response.content.decode('utf-8')
 

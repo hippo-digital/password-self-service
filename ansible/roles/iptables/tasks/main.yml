@@ -21,6 +21,9 @@
 - name: Allow HTTPS
   iptables: chain=INPUT protocol=tcp destination_port=443 jump=ACCEPT
 
+- name: Allow HTTPS (444 for receiver)
+  iptables: chain=INPUT protocol=tcp destination_port=444 jump=ACCEPT
+
 - name: Block all incoming
   iptables: chain=INPUT jump=DROP
 

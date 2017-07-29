@@ -1,0 +1,11 @@
+---
+
+# Required infrastructure
+# -----------------------
+
+- hosts: all
+  user: ubuntu
+  roles:
+   - integration_tests
+
+

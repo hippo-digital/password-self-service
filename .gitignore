@@ -1,7 +1,7 @@
 *.log
 *.pyc
 .idea/*
-password_reset_frontend/bin/
-password_reset_frontend/include/
-password_reset_frontend/lib/
-password_reset_frontend/pip-selfcheck.json
+*/bin/
+*/include/
+*/lib/
+*/pip-selfcheck.json
