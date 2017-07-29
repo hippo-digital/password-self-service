@@ -1,15 +1,11 @@
-from flask import Flask, request, render_template
+from flask import Flask, request
 import logging, os
 import string
 import random
 from storage import storage
 import json
-from Crypto.PublicKey import RSA
-from Crypto import Random
-import base64
 
 app = Flask(__name__)
-public_key = None
 redis_db = 0
 
 
@@ -75,18 +71,7 @@ def coderesponse(id, status):
 
     return 'OK'
 
-def store_request(id, type, data):
-    to_encrypt = json.dumps({'id': id, 'type': type, 'request_content': data})
-    random_generator = Random.new().read
-    encrypted_data = public_key.encrypt(to_encrypt.encode('utf-8'), random_generator)
-    b64_encrypted_data = base64.b64encode(encrypted_data[0])
-
-    storage.rpush('requests', b64_encrypted_data)
-
-    None
-
 log = logging.getLogger('password_reset_frontend')
 
 storage(db = redis_db)
-
 

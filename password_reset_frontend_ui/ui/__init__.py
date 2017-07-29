@@ -6,9 +6,12 @@ import random
 from storage import storage
 import json
 import time
+from Crypto import Random
+import base64
 
 
 app = Flask(__name__)
+public_key = None
 
 
 @app.before_request
@@ -113,6 +116,14 @@ def fields_render(step, fields):
 
 def get_new_id():
     return ''.join([random.choice(string.ascii_letters + string.digits) for n in range(12)])
+
+def store_request(id, type, data):
+    to_encrypt = json.dumps({'id': id, 'type': type, 'request_content': data})
+    random_generator = Random.new().read
+    encrypted_data = public_key.encrypt(to_encrypt.encode('utf-8'), random_generator)
+    b64_encrypted_data = base64.b64encode(encrypted_data[0])
+
+    storage.rpush('requests', b64_encrypted_data)
 
 log = logging.getLogger('password_reset_frontend')
 
