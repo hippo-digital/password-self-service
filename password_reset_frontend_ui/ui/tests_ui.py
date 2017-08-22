@@ -72,7 +72,7 @@ class tests(unittest.TestCase):
         ui.public_key = self.test_public_key
         ui.backend_wait_time_seconds = 3
 
-        code_response = self.app.post('/code', data={'username': 'wibble'})
+        code_response = self.app.post('/code', data={'username': 'wibble', 'id': 'abcd1234'})
 
         b64_encrypted_request = storage.lpop('requests')
 

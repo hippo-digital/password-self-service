@@ -45,6 +45,10 @@ def log_request():
 def start():
     return basic_render('start')
 
+@app.route('/username')
+def username():
+    return basic_render('username')
+
 @app.route('/reset_method', methods=['POST'])
 def reset_method():
     username = request.form['username']
@@ -71,10 +75,6 @@ def spineauth(ticket=None):
         store_request(id, 'smartcard_validate', {'ticket': ticket})
 
         return ticket
-
-@app.route('/username')
-def username():
-    return basic_render('username')
 
 @app.route('/code', methods=['POST'])
 def code():
