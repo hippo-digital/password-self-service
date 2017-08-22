@@ -49,6 +49,3 @@ class tests(unittest.TestCase):
 
         self.assertEqual(3, len(requests))
 
-
-
-

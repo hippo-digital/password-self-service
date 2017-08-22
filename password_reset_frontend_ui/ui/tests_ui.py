@@ -66,3 +66,65 @@ class tests(unittest.TestCase):
         self.assertEqual('123', request['id'])
         self.assertEqual('456', request['type'])
         self.assertEqual({'req': 789}, request['request_content'])
+
+    def test__code__whenUsernameIsSupplied__storesRequestForCode(self):
+        self.clear_requests()
+        ui.public_key = self.test_public_key
+        ui.backend_wait_time_seconds = 3
+
+        code_response = self.app.post('/code', data={'username': 'wibble'})
+
+        b64_encrypted_request = storage.lpop('requests')
+
+        if b64_encrypted_request == None:
+            self.fail('No request was stored')
+            return
+
+        request = self.unwrap_request(b64_encrypted_request)
+
+        self.assertIsNotNone(request, 'Unwrapped request was None')
+
+        self.assertIn('id', request)
+        self.assertIn('type', request)
+        self.assertIn('request_content', request)
+        self.assertEqual('code', request['type'])
+        self.assertEqual({'username': 'wibble'}, request['request_content'])
+
+    def test__reset__whenCodeAndPasswordIsSupplied__storesRequestForReset(self):
+        self.clear_requests()
+        ui.public_key = self.test_public_key
+
+        storage.hset('reset_responses', 'aaa123123', json.dumps({'status': 'OK'}))
+
+        reset_response = self.app.post('/reset', data={'username': 'wibble',
+                                                      'code': 'aa123456',
+                                                      'code_hash': 'aaaaa',
+                                                      'id': 'aaa123123',
+                                                      'password': 'Password1',
+                                                      'password-confirm': 'Password1'})
+
+        b64_encrypted_request = storage.lpop('requests')
+
+        if b64_encrypted_request == None:
+            self.fail('No request was stored')
+            return
+
+        request = self.unwrap_request(b64_encrypted_request)
+
+        self.assertIsNotNone(request, 'Unwrapped request was None')
+
+        self.assertIn('id', request)
+        self.assertIn('type', request)
+        self.assertIn('request_content', request)
+        self.assertIn('username', request['request_content'])
+        self.assertIn('code', request['request_content'])
+        self.assertIn('code_hash', request['request_content'])
+        self.assertIn('password', request['request_content'])
+
+        self.assertEqual('aaa123123', request['id'])
+        self.assertEqual('reset', request['type'])
+        self.assertEqual('wibble', request['request_content']['username'])
+        self.assertEqual('aa123456', request['request_content']['code'])
+        self.assertEqual('aaaaa', request['request_content']['code_hash'])
+        self.assertEqual('Password1', request['request_content']['password'])
+

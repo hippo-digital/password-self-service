@@ -9,7 +9,7 @@ import time
 
 class tests(unittest.TestCase):
     def setUp(self):
-        self.frontend_address = 'https://127.0.0.1'
+        self.frontend_address = 'http://127.0.0.1:5000'
 
     def get_code(self):
         sms_uri = 'https://rest.textmagic.com/api/v2/replies?limit=1'

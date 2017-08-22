@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect
 import requests
 import logging, os
 import string
@@ -7,12 +7,22 @@ from storage import storage
 import json
 import time
 from Crypto import Random
+from Crypto.PublicKey import RSA
 import base64
 
 
 app = Flask(__name__)
-public_key = None
 
+b64_public_key = """MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApaaE3Bu5pBEbFQ67rXzv
+rwwya7VKfPyF6gxw4s/FSmuO2olqvmHpxOLvOvY5YsAjARM1oI0PZ4dv4OsTpHsC
+Tw/v5tbcaYw4VZnAwmZKsna8NuP7yKgHOR1J2Iql07NLpIR436Imp9TvlFB2pWRp
+S3cmg0rJcO7r3BkajrnAv9qppqnXw9ZCYS1J8UEoOUN42/8pKyRboTZ7PPCwb3eG
+IOdi8hSH65zJhv+n+2zoLSwMLGt0w4v5Ami21tB5izyxl4MYY1hO93UT1UBXcceA
+oNAVu8TWDBLKUhVk+cL3TMk8eYCM8LQCLMqveCdGEJ4J8rHop/lFVqA2OLItvb/z
+jQIDAQAB"""
+public_key = RSA.importKey(base64.b64decode(b64_public_key))
+redis_db = 0
+backend_wait_time_seconds = 30
 
 @app.before_request
 def log_request():
@@ -35,42 +45,69 @@ def log_request():
 def start():
     return basic_render('start')
 
+@app.route('/reset_method', methods=['POST'])
+def reset_method():
+    username = request.form['username']
+
+    if 'resetMethod' in request.form:
+        if request.form['resetMethod'] == 'spineauth':
+            return redirect('/spineauth', code=307)
+        elif request.form['resetMethod'] == 'code':
+            return redirect('/code', code=307)
+        else:
+            return 'Error'
+    else:
+        id = get_new_id()
+
+        return fields_render('reset_method', {'username': username, 'id': id})
+    # return basic_render('reset_method')
+
+@app.route('/spineauth', methods=['POST'])
+@app.route('/spineauth/<ticket>', methods=['POST'])
+def spineauth(ticket=None):
+    if ticket == None:
+        return basic_render('spineauth')
+    else:
+        store_request(id, 'smartcard_validate', {'ticket': ticket})
+
+        return ticket
+
 @app.route('/username')
 def username():
     return basic_render('username')
 
 @app.route('/code', methods=['POST'])
 def code():
-    username=request.form['username']
-
-    id = get_new_id()
-    storage.rpush('code_requests', json.dumps({'username': username, 'id': id}))
-
-
-    code = None
-    timeout_counter = 0
-
-    while code == None and timeout_counter < 30:
-        timeout_counter += 1
-        time.sleep(1)
-        response_raw = storage.hget('code_responses', id)
-
-        if response_raw != None:
-            code = response_raw
-
-            return fields_render('code', {'username': username, 'id': id, 'code_hash': code})
-
-
-    return fields_render('failed', fields={'message': 'Failed to get response from server'})
-
-@app.route('/password', methods=['POST'])
-def password():
     username = request.form['username']
-    code = request.form['code']
-    code_hash = request.form['code_hash']
     id = request.form['id']
 
-    return fields_render('password', {'username': username, 'code': code, 'code_hash': code_hash, 'id': id})
+    if 'code' in request.form and 'code_hash' in request.form:
+        evidence = package_and_encrypt({'code': request.form['code'], 'code_hash': request.form['code_hash']})
+        return redirect('/password/%s' % evidence, 307)
+    else:
+        store_request(id, 'code', {'username': username})
+
+        code_hash = None
+        timeout_counter = 0
+
+        while code_hash == None and timeout_counter < backend_wait_time_seconds:
+            timeout_counter += 1
+            time.sleep(1)
+            response_raw = storage.hget('code_responses', id)
+
+            if response_raw != None:
+                code_hash = response_raw
+
+                return fields_render('code', {'username': username, 'id': id, 'code_hash': code_hash})
+
+        return fields_render('failed', fields={'message': 'Failed to get response from server'})
+
+@app.route('/password/<evidence>', methods=['POST'])
+def password(evidence):
+    username = request.form['username']
+    id = request.form['id']
+
+    return fields_render('password', {'username': username, 'evidence': evidence, 'id': id})
 
 @app.route('/reset', methods=['POST'])
 def reset():
@@ -84,13 +121,12 @@ def reset():
     if password != password_confirm:
         return 'Passwords do not match'
 
-
-    storage.rpush('reset_requests', json.dumps({'id': id, 'username': username, 'code': code, 'code_hash': code_hash, 'password': password}))
+    store_request(id, 'reset', {'username': username, 'code': code, 'code_hash': code_hash, 'password': password})
 
     res = {}
     timeout_counter = 0
 
-    while res == {} and timeout_counter < 30:
+    while res == {} and timeout_counter < backend_wait_time_seconds:
         timeout_counter += 1
         time.sleep(1)
         response_raw = storage.hget('reset_responses', id)
@@ -118,15 +154,21 @@ def get_new_id():
     return ''.join([random.choice(string.ascii_letters + string.digits) for n in range(12)])
 
 def store_request(id, type, data):
-    to_encrypt = json.dumps({'id': id, 'type': type, 'request_content': data})
+    to_encrypt = {'id': id, 'type': type, 'request_content': data}
+    b64_encrypted_data = package_and_encrypt(to_encrypt)
+
+    storage.rpush('requests', b64_encrypted_data)
+
+def package_and_encrypt(dict):
+    to_encrypt = json.dumps(dict)
     random_generator = Random.new().read
     encrypted_data = public_key.encrypt(to_encrypt.encode('utf-8'), random_generator)
     b64_encrypted_data = base64.b64encode(encrypted_data[0])
 
-    storage.rpush('requests', b64_encrypted_data)
+    return b64_encrypted_data.decode('utf-8')
 
 log = logging.getLogger('password_reset_frontend')
 
-storage()
+storage(db = redis_db)
 
 
