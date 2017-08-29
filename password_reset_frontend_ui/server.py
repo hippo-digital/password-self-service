@@ -1,4 +1,4 @@
-from view import app
+from ui import app
 import logging
 
 app.secret_key = 'Secret123!'

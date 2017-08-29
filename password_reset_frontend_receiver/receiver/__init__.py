@@ -1,12 +1,12 @@
-from flask import Flask, request, render_template
+from flask import Flask, request
 import logging, os
 import string
 import random
 from storage import storage
 import json
 
-
 app = Flask(__name__)
+redis_db = 0
 
 
 @app.before_request
@@ -28,21 +28,14 @@ def log_request():
 
 @app.route('/requests')
 def requests():
-    user = ''
-    reset = ''
-    outstanding_requests = {'codes': [], 'resets': []}
+    req = ''
+    outstanding_requests = []
 
-    while user != None:
-        user = storage.lpop('code_requests')
+    while req != None:
+        req = storage.lpop('requests')
 
-        if user != None:
-            outstanding_requests['codes'].append(user)
-
-    while reset != None:
-        reset = storage.lpop('reset_requests')
-
-        if reset != None:
-            outstanding_requests['resets'].append(reset)
+        if req != None:
+            outstanding_requests.append(req)
 
     return json.dumps(outstanding_requests)
 
@@ -80,6 +73,5 @@ def coderesponse(id, status):
 
 log = logging.getLogger('password_reset_frontend')
 
-storage()
-
+storage(db = redis_db)
 

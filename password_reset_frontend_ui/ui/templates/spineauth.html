@@ -1,0 +1,62 @@
+<label style="visibility: hidden; display: none; height: 0px;" id="pageTitle"
+       title="Checking your Smartcard..."></label>
+
+<p>You may be prompted to enter your Smartcard PIN</p>
+<div id="appletArea"></div>
+
+<div class="navbuttons">
+<button class="btn" onclick="protoNavAction(this)" value="reset_method">Start &nbsp;></button>
+</div>
+
+
+<script>
+    var tokenSnippet= "<OBJECT classid='clsid:8AD9C840-044E-11D1-B3E9-00805F499D93' width='200' height='130'> " +
+                                "<param name='CODEBASE' VALUE='/static/'> " +
+                                "<param name='archive' value='openNhsAuthApplet.jar'/> " +
+                                "<param name='code' value='openNhsAuthApplet'/> " +
+                                "<param name='type' value='application/x-java-applet'/> " +
+                                "<param name='timeout' value='30'/> " +
+                                "<param name='mayscript' value='true'/> " +
+                                "</OBJECT>";
+
+    var ticket = null;
+
+    function invokeApplet() {
+        var appletArea = document.getElementById('appletArea');
+        appletArea.innerHTML = tokenSnippet;
+    }
+
+    function getCookieById(id) {
+        var cookies = document.cookie.split(';');
+
+        for (i in cookies) {
+            cookie = cookies[i].trim().split('=')
+
+            if (cookie[0] == id) {
+                return cookie[1];
+            }
+        }
+
+        return null;
+    }
+
+    function checkCookie() {
+        return getCookieById('ticket');
+    }
+
+    function widget() {
+        ticket = checkCookie();
+        if (ticket == null || ticket == '') {
+            setTimeout(widget, 500);
+        } else {
+            document.cookie = "ticket=;";
+            window.location.href = "/spineauth/" + encodeURI(ticket);
+        }
+    }
+
+    invokeApplet();
+
+    widget();
+
+
+</script>
