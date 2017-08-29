@@ -1,0 +1,5 @@
+requests
+twilio
+https://github.com/zakird/pyad/archive/master.zip
+pyyaml
+redis
