@@ -16,3 +16,8 @@ source bin/activate
 pip3 install flask pycrypto redis requests
 
 
+cd $START_PATH/password_reset_backend/
+virtualenv .
+source bin/activate
+pip3 install flask pycrypto redis requests
+
