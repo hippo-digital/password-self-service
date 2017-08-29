@@ -4,7 +4,7 @@
     fqdn: hd.local
 
   frontend:
-    address: https://10.211.55.2:5000
+    address: http://10.211.55.2:5002
 
   sms:
     message: "A reset code has been requested for your account.\n\nIf this was in error contact the service desk on 0113 235 3315.\n\nYour reset code is %s"
