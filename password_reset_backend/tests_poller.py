@@ -90,7 +90,8 @@ class tests_poller(unittest.TestCase):
             self.assertIn('/requests', address)
 
     def test__mock__pyad(self):
-        with mock.patch('pyad.adquery.ADQuery', side_effect=self.mocked_pyad):
+        with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True, return_value=wibble()) as ldap_conn:
+        # with mock.patch('pyad.adquery.ADQuery', side_effect=self.mocked_pyad):
             from ad_connector import search_object
 
             so = search_object.search_object()
