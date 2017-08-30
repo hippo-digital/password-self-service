@@ -17,6 +17,19 @@ class tests_poller(unittest.TestCase):
 
         return SendSMSSuccess()
 
+    def mocked_pyad(self, *args, **kwargs):
+        class MockedPyAD:
+            def __init__(self):
+                self.results = []
+
+            def get_results(self):
+                return self.results
+
+            def execute_query(self, attributes=None, where_clause=None, base_dn=None):
+                return None
+
+        return MockedPyAD()
+
     def setUp(self):
         self.test_request_raw = 'Dpeac2xvdXVTuXocPkLKayuej/IRQY3i32RqhQMm3M1fBEB5scnj9xMz+5AzV1JO+MOQeB+8M65KNaNIIeNA3G3R5QgZzra/CgTT6s1nseNav8dsLND6f9nfC2TsBANooboNRxb5grjdKxujqLjX4WUnYgMTHf6b3/jwF+ftUoMJwDqFO2UhJE+pkAjmzSacwtkYSmeGoKNJKj+BmiIdFCjOJqpoP2IS4aUbGP9BLzuHiM5DoN12SmIViuoCbUROXQ3a/+I3yh5wNGbDGZmVwfr3f+1LQL6R9AzQ3vveoH16FQR7uLW1t1hJS07/pEMTKMuSrjUP2IBbsSNhWL3dtA=='
 
@@ -55,6 +68,7 @@ class tests_poller(unittest.TestCase):
         p = poller.poller()
 
         with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True, return_value=wibble()) as ldap_conn:
+        # with mock.patch('pyad.adquery.ADQuery', side_effect=self.mocked_pyad):
             with mock.patch('requests.post') as post_request:
                 with mock.patch('poller.poller.send_sms') as mocked_sms:
                     p.send_code('wibble', '123')
@@ -75,7 +89,13 @@ class tests_poller(unittest.TestCase):
             get_request.assert_called()
             self.assertIn('/requests', address)
 
+    def test__mock__pyad(self):
+        with mock.patch('pyad.adquery.ADQuery', side_effect=self.mocked_pyad):
+            from ad_connector import search_object
 
+            so = search_object.search_object()
+            so.search('test_cn', 'test_domain', 'test_server')
+            None
 
 class user_obj:
     def __init__(self):
