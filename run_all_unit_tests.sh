@@ -22,7 +22,7 @@ echo $RES
 
 cd $START_PATH/password_reset_backend/
 source bin/activate
-python3 -m unittest ui/tests_poller.py
+python3 -m unittest tests_poller.py
 RES=$(( $? + $RES ))
 echo $RES
 
