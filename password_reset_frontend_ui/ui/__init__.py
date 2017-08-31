@@ -7,8 +7,10 @@ from storage import storage
 import json
 import time
 from Crypto import Random
+from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 import base64
+import urllib.parse
 
 
 app = Flask(__name__)
@@ -112,8 +114,7 @@ def password(evidence):
 @app.route('/reset', methods=['POST'])
 def reset():
     username = request.form['username']
-    code = request.form['code']
-    code_hash = request.form['code_hash']
+    evidence = request.form['evidence']
     id = request.form['id']
     password = request.form['password']
     password_confirm = request.form['password-confirm']
@@ -121,7 +122,7 @@ def reset():
     if password != password_confirm:
         return 'Passwords do not match'
 
-    store_request(id, 'reset', {'username': username, 'code': code, 'code_hash': code_hash, 'password': password})
+    store_request(id, 'reset', {'username': username, 'evidence': evidence, 'password': password})
 
     res = {}
     timeout_counter = 0
@@ -160,12 +161,27 @@ def store_request(id, type, data):
     storage.rpush('requests', b64_encrypted_data)
 
 def package_and_encrypt(dict):
-    to_encrypt = json.dumps(dict)
-    random_generator = Random.new().read
-    encrypted_data = public_key.encrypt(to_encrypt.encode('utf-8'), random_generator)
-    b64_encrypted_data = base64.b64encode(encrypted_data[0])
+    block_size = 32
 
-    return b64_encrypted_data.decode('utf-8')
+    to_encrypt_string = json.dumps(dict)
+    payload = _pad(to_encrypt_string, block_size).encode('utf-8')
+
+    secret_key_raw = os.urandom(block_size)
+
+    cipher = PKCS1_OAEP.new(public_key)
+    secret_key_encrypted = cipher.encrypt(secret_key_raw)
+
+    iv = Random.new().read(AES.block_size)
+    cipher = AES.new(secret_key_raw, AES.MODE_CFB, iv)
+    payload_encrypted = iv + cipher.encrypt(payload)
+
+    message = '%s.%s' % (base64.urlsafe_b64encode(secret_key_encrypted).decode('utf-8'), base64.urlsafe_b64encode(payload_encrypted).decode('utf-8'))
+
+    return message
+
+def _pad(s, block_size):
+    return s + (block_size - len(s) % block_size) * chr(block_size - len(s) % block_size)
+
 
 log = logging.getLogger('password_reset_frontend')
 
