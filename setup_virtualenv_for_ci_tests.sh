@@ -13,7 +13,7 @@ pip3 install flask redis pycrypto
 cd $START_PATH/password_reset_frontend_ui/
 virtualenv .
 source bin/activate
-pip3 install flask pycrypto redis requests
+pip3 install flask pycrypto redis requests mock
 
 
 cd $START_PATH/password_reset_backend/
