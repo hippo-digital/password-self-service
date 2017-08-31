@@ -1,0 +1,5 @@
+---
+- name: Create a file
+  win_file:
+    path: C:\Temp\foo.conf
+    state: file

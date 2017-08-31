@@ -1,6 +1,9 @@
 [all]
 34.253.213.168 hostname=pwdfe
 
-[aws-ci]
+[aws-ci-fe]
 172.31.43.102 hostname=pwd-ci-fe-01
+
+[aws-ci-be]
+172.31.32.201 hostname=pwd-ci-be-01
 

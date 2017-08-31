@@ -4,6 +4,7 @@
 class search_object:
     def search(self, object_cn, domain_dn, server):
         import pyad
+        from pyad import aduser, adquery
         query = pyad.adquery.ADQuery()
 
         query.execute_query(attributes = ["distinguishedName", "description", "mobile"],

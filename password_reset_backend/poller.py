@@ -14,6 +14,7 @@ from ad_connector import search_object, set_password
 from twilio.rest import Client
 from Crypto import Random
 from Crypto.PublicKey import RSA
+from Crypto.Cipher import AES, PKCS1_OAEP
 
 
 
@@ -73,42 +74,46 @@ KjiITfQGNThfsTh2/1HPl6A61E4Iw2G+xGXuy0O/IvYvwBNwveE="""
 
 
         for req in reqs:
-            None
+            unwrapped_request = self.unwrap_request(req)
 
-        if reqs != [] and reqs != None:
-            if 'codes' in reqs:
-                for code in reqs['codes']:
-                    try:
-                        code_request = json.loads(code)
-                    except Exception as ex:
-                        self.log.error('Method=poll, Message=Failed to parse JSON input, Input=%s, Exception=%s', (code, ex))
-                        break
+            if type(unwrapped_request) is dict:
+                if 'type' in unwrapped_request and 'id' in unwrapped_request and 'request_content' in unwrapped_request:
+                    id = unwrapped_request['id']
+                    content = unwrapped_request['request_content']
 
-                    try:
-                        self.send_code(code_request['username'], code_request['id'])
-                    except Exception as ex:
-                        self.log.error('Method=poll, Message=Failed to send code, Input=%s, Exception=%s', (code_request, ex))
-                        break
+                    if unwrapped_request['type'] == 'code':
+                        if 'username' in content:
+                            username = content['username']
 
-            if 'resets' in reqs:
-                for reset_raw in reqs['resets']:
-                    try:
-                        reset = json.loads(reset_raw)
-                    except Exception as ex:
-                        self.log.error('Method=poll, Message=Failed to parse JSON input, Input=%s, Exception=%s', (reset_raw, ex))
-                        break
+                            self.send_code(username=username, id=id)
 
-                    try:
-                        self.reset_password(reset)
-                    except Exception as ex:
-                        self.log.error('Method=poll, Message=Failed reset password, Input=%s, Exception=%s', (reset, ex))
-                        break
+                    if unwrapped_request['type'] == 'reset':
+                        try:
+                            self.reset_password(unwrapped_request)
+                        except Exception as ex:
+                            self.log.error('Method=poll, Message=Failed reset password, Input=%s, Exception=%s',
+                                           (unwrapped_request, ex))
+                            break
 
-    def unwrap_request(self, b64_encrypted_request):
-        encrypted_request = base64.b64decode(b64_encrypted_request)
-        decrypted_request = self.private_key.decrypt(encrypted_request)
-        ret = json.loads(decrypted_request.decode('utf-8'))
-        return ret
+    def unwrap_request(self, message):
+        secret_key_encrypted = base64.urlsafe_b64decode(message.split('.')[0])
+        payload_encrypted = base64.urlsafe_b64decode(message.split('.')[1])
+
+        public_cipher = PKCS1_OAEP.new(self.private_key)
+        sc = public_cipher.decrypt(secret_key_encrypted)
+
+        iv = payload_encrypted[:AES.block_size]
+        cipher = AES.new(sc, AES.MODE_CFB, iv)
+
+        pl_unpadded = cipher.decrypt(payload_encrypted[AES.block_size:])
+        pl = self._unpad(pl_unpadded).decode('utf-8')
+        unwrapped = json.loads(pl)
+
+        return unwrapped
+
+    @staticmethod
+    def _unpad(s):
+        return s[:-ord(s[len(s)-1:])]
 
     def send_code(self, username, id):
         self.log.info('Method=send_code, Username=%s, ID=%s' % (username, id))
@@ -169,20 +174,35 @@ KjiITfQGNThfsTh2/1HPl6A61E4Iw2G+xGXuy0O/IvYvwBNwveE="""
             # raise(ex)
 
     def reset_password(self, reset_request):
-        if 'username' in reset_request and 'code' in reset_request and 'code_hash' in reset_request and 'id' in reset_request and 'password' in reset_request:
+        if 'id' in reset_request \
+                and 'request_content' in reset_request \
+                and 'username' in reset_request['request_content'] \
+                and 'evidence' in reset_request['request_content'] \
+                and 'password' in reset_request['request_content']:
+
+            id = reset_request['id']
+            username = reset_request['request_content']['username']
+            password = reset_request['request_content']['password']
+            evidence_raw = reset_request['request_content']['evidence']
+
+            evidence = self.unwrap_request(evidence_raw)
+
+            code = evidence['code']
+            code_hash = evidence['code_hash']
+
             self.log.info('Method=reset_request, Username=%s, Code=%s, CodeHash=%s, ID=%s' % (
-                reset_request['username'],
-                reset_request['code'],
-                reset_request['code_hash'],
-                reset_request['id']))
+                username,
+                code,
+                code_hash,
+                id))
 
-            expected_hash = self.generate_code_hash(reset_request['username'], reset_request['code'], reset_request['id'])
+            expected_hash = self.generate_code_hash(username, code, id)
 
-            if expected_hash != reset_request['code_hash']:
-                requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], reset_request['id']), data='The reset code supplied was incorrect')
+            if expected_hash != code_hash:
+                requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id), data='The reset code supplied was incorrect')
             else:
-                self.reset_ad_password(reset_request['username'], reset_request['password'])
-                requests.post('%s/resetresponse/%s/OK' % (self.config['frontend']['address'], reset_request['id']), data='')
+                self.reset_ad_password(username, password)
+                requests.post('%s/resetresponse/%s/OK' % (self.config['frontend']['address'], id), data='')
         else:
             raise(Exception())
 
@@ -220,6 +240,10 @@ if __name__ == '__main__':
     p = poller()
 
     while True:
-        p.poll()
+        try:
+            p.poll()
+        except Exception as ex:
+            print(ex)
+
         time.sleep(1)
 
