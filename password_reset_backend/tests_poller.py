@@ -17,44 +17,69 @@ class tests_poller(unittest.TestCase):
 
         return SendSMSSuccess()
 
+    def mocked_requests_get_code(self, *args, **kwargs):
+        class MockedRequestsGet:
+            def __init__(self):
+                self.status_code = 200
+                self.content = '["MEBhBARHkGhtV0Uuqx-2XodfjO4gGkD1DMlk-vg_gy-D5tlT-097uFW5g8GpHax9bpcSq0YrBAgEKrPu5fHVeUooWFoyC3lSzGYpbO8ErqZxYXaD0gk4ruxtLG4URuTOkO6ncji7znCqRhJzuPogZM8ywQtHnG9HS4sylU_KaHr_-Oyng09_YPu4XsHo9tbiohA2SSD_SMzEssOPR83Rw0hqADBMpBncj-1Zc6khowp6DaQtqGaBDoWjQR3SLLt5pjJZ7oucs2-augH745KjV-Nj6ZG8t0i7au6mVBZ0zWcb0IeWIc9YfuPh3zckmQYiZgvoYRaeqttOvW8iodbg9g==.DGTum8yZyviQBBSNQzP5Yy4SM8H8X7VNsiCBFlAB2HNhX_q_whboArJIhMMSG-lDCWyvpz9nuw63w7oHd9i8DVieGOshod-n5qkSxXjfoccS2r-58Srd4wsEV7CpYnJ_dKhTD_vbPlo5qm6J1BvQMg=="]'.encode('utf-8')
+
+        return MockedRequestsGet()
+
+    def mocked_requests_get_reset(self, *args, **kwargs):
+        class MockedRequestsGet:
+            def __init__(self):
+                self.status_code = 200
+                self.content = '["i4Mcz3MbIhy37n7A44UjQLAbhwyl6MA8KrrdTF_7oy4S8YcU7QIa6V7EwCkE0mOtwU1kl45Ic1D6IZNb-IUXgy02oLZ8MVfmwSSX2Z-s4qFr3hg3_Me_fCWJ3mbWKusRoW5lm00i3AbIDXefcRpUrfxcL_pPS7nqg-xMJ9VIiyVxFlzOH1K5s4H3PtCLplhWZWIHRyMUit10UiYkP20exR92eO-HFbDkPOtW84gxKkRmDxsfTIZERgdspmCSyaIBYx0qMdnVigTN_Hs2vE2fCdpp9CEzuYDgbbdHhlFjhAuS1Hc9Fif8C3M_MmLYbP0c5w4hmEWx_t0_zog9uTy9Hg==.BYQU1lyWhNGqE01UybF5jSPcEfq-pzdwCDp6bilfEBM7WPV2et4PL8TR0Hmyxt7xZplagFuOoXPaeF6mQh-V30HdxHncf9dN3k63yHkHGOfBJREO-K9-QOFy_rIB_Dchv8ZTc_YliiLLtn41wIZxLNf6V6YijX8B4oVHiNlQrS5XeLW-8u0_6T7kGv9r2eiNjROc2pGWyQxshfCMOhvSwfKMx1jkQxc9O7TXFP1TjBNr9Dt4v94YImpa-udbd9hoz78f4DkXOBnUfqR6qydi7d_N8Hb23sKIO-6SttWZUxNqlc1FoSbKdiSOKZvZY2ARhCDuDGAbnrEKbFIgS24j03UEltpYcAZveEQByxCQoiDmZQev60elOCIijwxvym-qznd63q3NF_97NjbVFPbeDMen17dkIvZ2i3hfkqr0mPaQpw4CetawrWOYwC7dvfsZb-l0xHD2x8blxkW4hFce1UVdsOH5Jsd8dF_-9vFwUidbyc-LhgLXphj3XC2jwPoBeqIitGqYbNJYwtfE6iYByNre9w7tb8oFQYWf1kqU5c-cpewzTKpPSWzjNjRw0cvk-OSmG_T_CVg3kBR5mYt8oywDhhUR4PGZdx8MgAY8fDw9m5ARFoA3uFMArOCsTDEOb8LkAWM_ucWuT3J4GoHtSBE90k7949tnGU-ypcWkSbG1ZcvcaxTR1NBwl4GF4AisR8rpBrshV_R6JX5nwKMD1itsIUTbzCWnEGfUb3ULrcpV99T17hTIb0-MFoNDqYlNyBcnHDhS_u17j_N25W5zp_NLpF3u2KJqDjQvb6euxI0OPVzQGGAAB6f8_YGAQa1Cg2eoXae0iY6cw5ZoFPomz9BPv1Lei0m3S7vsfw5ERyZhX459gaLF2y8oqsFjbjbi9txDeC4uQ-NMoPvfO0ZEOw=="]'.encode('utf-8')
+
+        return MockedRequestsGet()
+
+    def mocked_pyad(self, *args, **kwargs):
+        class MockedPyAD:
+            def __init__(self):
+                self.results = []
+
+            def get_results(self):
+                return self.results
+
+            def execute_query(self, attributes=None, where_clause=None, base_dn=None):
+                return None
+
+        return MockedPyAD()
+
     def setUp(self):
-        self.test_request_raw = 'Dpeac2xvdXVTuXocPkLKayuej/IRQY3i32RqhQMm3M1fBEB5scnj9xMz+5AzV1JO+MOQeB+8M65KNaNIIeNA3G3R5QgZzra/CgTT6s1nseNav8dsLND6f9nfC2TsBANooboNRxb5grjdKxujqLjX4WUnYgMTHf6b3/jwF+ftUoMJwDqFO2UhJE+pkAjmzSacwtkYSmeGoKNJKj+BmiIdFCjOJqpoP2IS4aUbGP9BLzuHiM5DoN12SmIViuoCbUROXQ3a/+I3yh5wNGbDGZmVwfr3f+1LQL6R9AzQ3vveoH16FQR7uLW1t1hJS07/pEMTKMuSrjUP2IBbsSNhWL3dtA=='
+        self.test_code_request_raw = 'MEBhBARHkGhtV0Uuqx-2XodfjO4gGkD1DMlk-vg_gy-D5tlT-097uFW5g8GpHax9bpcSq0YrBAgEKrPu5fHVeUooWFoyC3lSzGYpbO8ErqZxYXaD0gk4ruxtLG4URuTOkO6ncji7znCqRhJzuPogZM8ywQtHnG9HS4sylU_KaHr_-Oyng09_YPu4XsHo9tbiohA2SSD_SMzEssOPR83Rw0hqADBMpBncj-1Zc6khowp6DaQtqGaBDoWjQR3SLLt5pjJZ7oucs2-augH745KjV-Nj6ZG8t0i7au6mVBZ0zWcb0IeWIc9YfuPh3zckmQYiZgvoYRaeqttOvW8iodbg9g==.DGTum8yZyviQBBSNQzP5Yy4SM8H8X7VNsiCBFlAB2HNhX_q_whboArJIhMMSG-lDCWyvpz9nuw63w7oHd9i8DVieGOshod-n5qkSxXjfoccS2r-58Srd4wsEV7CpYnJ_dKhTD_vbPlo5qm6J1BvQMg=='
+        self.test_reset_request_raw = 'i4Mcz3MbIhy37n7A44UjQLAbhwyl6MA8KrrdTF_7oy4S8YcU7QIa6V7EwCkE0mOtwU1kl45Ic1D6IZNb-IUXgy02oLZ8MVfmwSSX2Z-s4qFr3hg3_Me_fCWJ3mbWKusRoW5lm00i3AbIDXefcRpUrfxcL_pPS7nqg-xMJ9VIiyVxFlzOH1K5s4H3PtCLplhWZWIHRyMUit10UiYkP20exR92eO-HFbDkPOtW84gxKkRmDxsfTIZERgdspmCSyaIBYx0qMdnVigTN_Hs2vE2fCdpp9CEzuYDgbbdHhlFjhAuS1Hc9Fif8C3M_MmLYbP0c5w4hmEWx_t0_zog9uTy9Hg==.BYQU1lyWhNGqE01UybF5jSPcEfq-pzdwCDp6bilfEBM7WPV2et4PL8TR0Hmyxt7xZplagFuOoXPaeF6mQh-V30HdxHncf9dN3k63yHkHGOfBJREO-K9-QOFy_rIB_Dchv8ZTc_YliiLLtn41wIZxLNf6V6YijX8B4oVHiNlQrS5XeLW-8u0_6T7kGv9r2eiNjROc2pGWyQxshfCMOhvSwfKMx1jkQxc9O7TXFP1TjBNr9Dt4v94YImpa-udbd9hoz78f4DkXOBnUfqR6qydi7d_N8Hb23sKIO-6SttWZUxNqlc1FoSbKdiSOKZvZY2ARhCDuDGAbnrEKbFIgS24j03UEltpYcAZveEQByxCQoiDmZQev60elOCIijwxvym-qznd63q3NF_97NjbVFPbeDMen17dkIvZ2i3hfkqr0mPaQpw4CetawrWOYwC7dvfsZb-l0xHD2x8blxkW4hFce1UVdsOH5Jsd8dF_-9vFwUidbyc-LhgLXphj3XC2jwPoBeqIitGqYbNJYwtfE6iYByNre9w7tb8oFQYWf1kqU5c-cpewzTKpPSWzjNjRw0cvk-OSmG_T_CVg3kBR5mYt8oywDhhUR4PGZdx8MgAY8fDw9m5ARFoA3uFMArOCsTDEOb8LkAWM_ucWuT3J4GoHtSBE90k7949tnGU-ypcWkSbG1ZcvcaxTR1NBwl4GF4AisR8rpBrshV_R6JX5nwKMD1itsIUTbzCWnEGfUb3ULrcpV99T17hTIb0-MFoNDqYlNyBcnHDhS_u17j_N25W5zp_NLpF3u2KJqDjQvb6euxI0OPVzQGGAAB6f8_YGAQa1Cg2eoXae0iY6cw5ZoFPomz9BPv1Lei0m3S7vsfw5ERyZhX459gaLF2y8oqsFjbjbi9txDeC4uQ-NMoPvfO0ZEOw=='
 
-    def unwrap_request(self, b64_encrypted_request):
-        encrypted_request = base64.b64decode(b64_encrypted_request)
-
-        request_data = self.test_private_key.decrypt(encrypted_request)
-        return json.loads(request_data.decode('utf-8'))
-
-    def test_crypto(self):
-        random_generator = Random.new().read
-        key = RSA.generate(2048, random_generator)
-        to_encrypt = 'abcdefgh'.encode('utf-8')
-
-        public_key = key.publickey()
-        enc_data = public_key.encrypt(to_encrypt, random_generator)
-
-        dec_data = key.decrypt(enc_data)
-
-        self.assertEqual(dec_data, to_encrypt)
-
-    def test_unwrap(self):
+    def test_code_request_unwrap(self):
         import poller
 
         p = poller.poller()
-        req = p.unwrap_request(self.test_request_raw)
+        req = p.unwrap_request(self.test_code_request_raw)
 
         self.assertIn('id', req)
         self.assertIn('type', req)
         self.assertIn('request_content', req)
         self.assertIn('username', req['request_content'])
-        self.assertEqual('brett', req['request_content']['username'])
+        self.assertEqual('wibble', req['request_content']['username'])
+
+    def test_reset_request_unwrap(self):
+        import poller
+
+        p = poller.poller()
+        req = p.unwrap_request(self.test_reset_request_raw)
+
+        self.assertIn('id', req)
+        self.assertIn('type', req)
+        self.assertIn('request_content', req)
+        self.assertIn('username', req['request_content'])
+        self.assertEqual('wibble', req['request_content']['username'])
 
     def test__send_code__whenCalledWithValidParameters__calls_send_sms(self):
         from ad_connector import search_object, set_password
         p = poller.poller()
 
         with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True, return_value=wibble()) as ldap_conn:
+        # with mock.patch('pyad.adquery.ADQuery', side_effect=self.mocked_pyad):
             with mock.patch('requests.post') as post_request:
                 with mock.patch('poller.poller.send_sms') as mocked_sms:
                     p.send_code('wibble', '123')
@@ -75,7 +100,36 @@ class tests_poller(unittest.TestCase):
             get_request.assert_called()
             self.assertIn('/requests', address)
 
+    def test__mock__pyad(self):
+        with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True, return_value=wibble()) as ldap_conn:
+        # with mock.patch('pyad.adquery.ADQuery', side_effect=self.mocked_pyad):
+            from ad_connector import search_object
 
+            so = search_object.search_object()
+            so.search('test_cn', 'test_domain', 'test_server')
+            None
+
+    def test__poll__whenSingleRequestForCodeRetrieved__calls_send_sms(self):
+        p = poller.poller()
+
+        with mock.patch('requests.get', side_effect=self.mocked_requests_get_code) as post_request:
+            with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True,
+                            return_value=wibble()) as ldap_conn:
+                with mock.patch('poller.poller.send_sms') as mocked_sms:
+                    p.poll()
+
+                    mocked_sms.assert_called()
+
+    # def test__poll__whenSingleRequestForResetRetrieved__calls_reset_password(self):
+    #     p = poller.poller()
+    #
+    #     with mock.patch('requests.get', side_effect=self.mocked_requests_get_reset) as post_request:
+    #         with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True,
+    #                         return_value=wibble()) as ldap_conn:
+    #             with mock.patch('poller.poller.send_sms') as mocked_sms:
+    #                 p.poll()
+    #
+    #                 mocked_sms.assert_called()
 
 class user_obj:
     def __init__(self):
