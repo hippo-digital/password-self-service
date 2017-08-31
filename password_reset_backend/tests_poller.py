@@ -53,41 +53,45 @@ class tests_poller(unittest.TestCase):
     def test_code_request_unwrap(self):
         import poller
 
-        p = poller.poller()
-        req = p.unwrap_request(self.test_code_request_raw)
+        with mock.patch('requests.get'):
+            p = poller.poller()
+            req = p.unwrap_request(self.test_code_request_raw)
 
-        self.assertIn('id', req)
-        self.assertIn('type', req)
-        self.assertIn('request_content', req)
-        self.assertIn('username', req['request_content'])
-        self.assertEqual('wibble', req['request_content']['username'])
+            self.assertIn('id', req)
+            self.assertIn('type', req)
+            self.assertIn('request_content', req)
+            self.assertIn('username', req['request_content'])
+            self.assertEqual('wibble', req['request_content']['username'])
 
     def test_reset_request_unwrap(self):
         import poller
 
-        p = poller.poller()
-        req = p.unwrap_request(self.test_reset_request_raw)
+        with mock.patch('requests.get'):
+            p = poller.poller()
+            req = p.unwrap_request(self.test_reset_request_raw)
 
-        self.assertIn('id', req)
-        self.assertIn('type', req)
-        self.assertIn('request_content', req)
-        self.assertIn('username', req['request_content'])
-        self.assertEqual('wibble', req['request_content']['username'])
+            self.assertIn('id', req)
+            self.assertIn('type', req)
+            self.assertIn('request_content', req)
+            self.assertIn('username', req['request_content'])
+            self.assertEqual('wibble', req['request_content']['username'])
 
     def test__send_code__whenCalledWithValidParameters__calls_send_sms(self):
         from ad_connector import search_object, set_password
-        p = poller.poller()
 
-        with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True, return_value=wibble()) as ldap_conn:
-        # with mock.patch('pyad.adquery.ADQuery', side_effect=self.mocked_pyad):
-            with mock.patch('requests.post') as post_request:
-                with mock.patch('poller.poller.send_sms') as mocked_sms:
-                    p.send_code('wibble', '123')
-                    mocked_sms.assert_called()
-                    called_args = mocked_sms.call_args_list[0][0]
+        with mock.patch('requests.get'):
+            p = poller.poller()
 
-                    self.assertEqual('123456', called_args[0])
-                    self.assertEqual(10, len(called_args[1]))
+            with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True, return_value=wibble()) as ldap_conn:
+            # with mock.patch('pyad.adquery.ADQuery', side_effect=self.mocked_pyad):
+                with mock.patch('requests.post') as post_request:
+                    with mock.patch('poller.poller.send_sms') as mocked_sms:
+                        p.send_code('wibble', '123')
+                        mocked_sms.assert_called()
+                        called_args = mocked_sms.call_args_list[0][0]
+
+                        self.assertEqual('123456', called_args[0])
+                        self.assertEqual(10, len(called_args[1]))
 
     def test__poll__whenCalled__callsRequestsURL(self):
         p = poller.poller()
@@ -110,15 +114,18 @@ class tests_poller(unittest.TestCase):
             None
 
     def test__poll__whenSingleRequestForCodeRetrieved__calls_send_sms(self):
-        p = poller.poller()
+        with mock.patch('requests.get'):
+            p = poller.poller()
 
-        with mock.patch('requests.get', side_effect=self.mocked_requests_get_code) as post_request:
-            with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True,
-                            return_value=wibble()) as ldap_conn:
-                with mock.patch('poller.poller.send_sms') as mocked_sms:
-                    p.poll()
+            with mock.patch('requests.get', side_effect=self.mocked_requests_get_code) as post_request:
+                with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True,
+                                return_value=wibble()) as ldap_conn:
+                    with mock.patch('poller.poller.send_sms') as mocked_sms:
+                        with mock.patch('requests.post'):
 
-                    mocked_sms.assert_called()
+                            p.poll()
+
+                            mocked_sms.assert_called()
 
     # def test__poll__whenSingleRequestForResetRetrieved__calls_reset_password(self):
     #     p = poller.poller()

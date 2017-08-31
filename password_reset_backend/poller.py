@@ -17,19 +17,10 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES, PKCS1_OAEP
 
 
-
 class poller():
     def __init__(self):
         self.log = logging.getLogger('password_reset_backend')
-        self.log.setLevel(logging.DEBUG)
-        fh = logging.FileHandler('c:\\temp\\password_reset_backend.log')
-        fh.setLevel(logging.DEBUG)
-        self.log.addHandler(fh)
-        formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
-        fh.setFormatter(formatter)
-        self.log.info("Poller started")
 
-        self.log.info('Loading config')
         self.config = self.loadconfig('config.yml')
         self.log.info('Configuration: %s' % self.config)
 
@@ -208,20 +199,28 @@ KjiITfQGNThfsTh2/1HPl6A61E4Iw2G+xGXuy0O/IvYvwBNwveE="""
 
     def reset_ad_password(self, username, new_password):
         self.log.info('Method=reset_ad_password, Username=%s' % username)
-        q = search_object.search_object()
+
+        try:
+            q = search_object.search_object()
+        except Exception as ex:
+            self.log.error('Failed search for user in AD', ex)
 
         try:
             users = q.search(username, self.config['directory']['dn'], self.config['directory']['fqdn'])
         except Exception as ex:
-            print(ex)
+            self.log.error('Failed search for user in AD', ex)
 
         if len(users) != 1:
+            self.log.error('Could not find specified user in AD')
             raise Exception('Incorrect')
 
         user = users[0]
 
-        pwd = set_password.set_password()
-        pwd.set(user['distinguishedName'], new_password, self.config['directory']['dn'], self.config['directory']['fqdn'])
+        try:
+            pwd = set_password.set_password()
+            pwd.set(user['distinguishedName'], new_password, self.config['directory']['dn'], self.config['directory']['fqdn'])
+        except Exception as ex:
+            self.log.error('Failed to set password in AD', ex)
 
     def loadconfig(self, config_file_path):
         script_path = os.path.dirname(os.path.realpath(__file__))
@@ -236,14 +235,14 @@ KjiITfQGNThfsTh2/1HPl6A61E4Iw2G+xGXuy0O/IvYvwBNwveE="""
         return b64_hash
 
 
-if __name__ == '__main__':
-    p = poller()
-
-    while True:
-        try:
-            p.poll()
-        except Exception as ex:
-            print(ex)
-
-        time.sleep(1)
+# if __name__ == '__main__':
+#     p = poller()
+#
+#     while True:
+#         try:
+#             p.poll()
+#         except Exception as ex:
+#             print(ex)
+#
+#         time.sleep(1)
 
