@@ -127,17 +127,6 @@ class tests_poller(unittest.TestCase):
 
                             mocked_sms.assert_called()
 
-    # def test__poll__whenSingleRequestForResetRetrieved__calls_reset_password(self):
-    #     p = poller.poller()
-    #
-    #     with mock.patch('requests.get', side_effect=self.mocked_requests_get_reset) as post_request:
-    #         with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True,
-    #                         return_value=wibble()) as ldap_conn:
-    #             with mock.patch('poller.poller.send_sms') as mocked_sms:
-    #                 p.poll()
-    #
-    #                 mocked_sms.assert_called()
-
 class user_obj:
     def __init__(self):
         self.entry_dn = ''
