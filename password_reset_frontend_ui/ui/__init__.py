@@ -10,21 +10,12 @@ from Crypto import Random
 from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 import base64
-import urllib.parse
+import yaml
 
 
 app = Flask(__name__)
 
-b64_public_key = """MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApaaE3Bu5pBEbFQ67rXzv
-rwwya7VKfPyF6gxw4s/FSmuO2olqvmHpxOLvOvY5YsAjARM1oI0PZ4dv4OsTpHsC
-Tw/v5tbcaYw4VZnAwmZKsna8NuP7yKgHOR1J2Iql07NLpIR436Imp9TvlFB2pWRp
-S3cmg0rJcO7r3BkajrnAv9qppqnXw9ZCYS1J8UEoOUN42/8pKyRboTZ7PPCwb3eG
-IOdi8hSH65zJhv+n+2zoLSwMLGt0w4v5Ami21tB5izyxl4MYY1hO93UT1UBXcceA
-oNAVu8TWDBLKUhVk+cL3TMk8eYCM8LQCLMqveCdGEJ4J8rHop/lFVqA2OLItvb/z
-jQIDAQAB"""
-public_key = RSA.importKey(base64.b64decode(b64_public_key))
-redis_db = 0
-backend_wait_time_seconds = 30
+
 
 @app.before_request
 def log_request():
@@ -182,6 +173,17 @@ def package_and_encrypt(dict):
 def _pad(s, block_size):
     return s + (block_size - len(s) % block_size) * chr(block_size - len(s) % block_size)
 
+def loadconfig(config_file_path):
+    script_path = os.path.dirname(os.path.realpath(__file__))
+    with open('%s/%s' % (script_path, config_file_path)) as cfgstream:
+        cfg = yaml.load(cfgstream)
+        return cfg
+
+config = loadconfig('config.yml')
+
+public_key = RSA.importKey(base64.b64decode(config['public_key']))
+redis_db = 0
+backend_wait_time_seconds = 30
 
 log = logging.getLogger('password_reset_frontend')
 
