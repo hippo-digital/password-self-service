@@ -37,24 +37,30 @@ class poller():
                 result_raw = req.content.decode('utf-8')
                 reqs = json.loads(result_raw)
         except Exception as ex:
-            self.log.info(ex)
+            self.log.info('Failed to retrieve requests: %s' % ex)
 
 
         for req in reqs:
-            unwrapped_request = self.unwrap_request(req)
+            try:
+                unwrapped_request = self.unwrap_request(req)
+            except Exception as ex:
+                self.log.error('Failed to unwrap request %s with error %s' % (req, ex))
 
             if type(unwrapped_request) is dict:
                 if 'type' in unwrapped_request and 'id' in unwrapped_request and 'request_content' in unwrapped_request:
                     id = unwrapped_request['id']
                     content = unwrapped_request['request_content']
+                    request_type = unwrapped_request['type']
 
-                    if unwrapped_request['type'] == 'code':
+                    self.log.info('Request Type: %s,  ID: %s, Content: %s' % (request_type, id, content))
+
+                    if request_type == 'code':
                         if 'username' in content:
                             username = content['username']
 
                             self.send_code(username=username, id=id)
 
-                    if unwrapped_request['type'] == 'reset':
+                    if request_type == 'reset':
                         try:
                             self.reset_password(unwrapped_request)
                         except Exception as ex:
