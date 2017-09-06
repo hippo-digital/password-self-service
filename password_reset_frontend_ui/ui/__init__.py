@@ -6,6 +6,7 @@ import random
 from storage import storage
 import json
 import time
+import Crypto
 from Crypto import Random
 from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
@@ -176,6 +177,7 @@ def store_request(id, type, data):
     storage.rpush('requests', b64_encrypted_data)
 
 def package_and_encrypt(dict):
+    Crypto.Random.atfork()
     block_size = 32
 
     to_encrypt_string = json.dumps(dict)
