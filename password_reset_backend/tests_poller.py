@@ -114,18 +114,39 @@ class tests_poller(unittest.TestCase):
             None
 
     def test__poll__whenSingleRequestForCodeRetrieved__calls_send_sms(self):
-        with mock.patch('requests.get'):
-            p = poller.poller()
+        p = poller.poller()
 
-            with mock.patch('requests.get', side_effect=self.mocked_requests_get_code) as post_request:
-                with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True,
-                                return_value=wibble()) as ldap_conn:
-                    with mock.patch('poller.poller.send_sms') as mocked_sms:
-                        with mock.patch('requests.post'):
+        with mock.patch('requests.get', side_effect=self.mocked_requests_get_code) as get_request:
+            with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True,
+                            return_value=wibble()) as ldap_conn:
+                with mock.patch('poller.poller.send_sms') as mocked_sms:
+                    with mock.patch('requests.post'):
 
-                            p.poll()
+                        p.poll()
 
-                            mocked_sms.assert_called()
+                        mocked_sms.assert_called()
+
+    def test__poll__whenSingleRequestForCodeRetrieved__callsFrontEndWithValidJSON(self):
+        p = poller.poller()
+
+        with mock.patch('requests.get', side_effect=self.mocked_requests_get_code) as get_request:
+            with mock.patch('ad_connector.search_object.search_object', autospec=True, entries=[user_obj()], bound=True,
+                            return_value=wibble()) as ldap_conn:
+                with mock.patch('poller.poller.send_sms') as mocked_sms:
+                    with mock.patch('requests.post') as post_request:
+
+                        p.poll()
+
+                        post_request.assert_called()
+                        post_body_raw = post_request.call_args[1]['data']
+
+                        try:
+                            post_body = json.loads(post_body_raw)
+                        except Exception as ex:
+                            self.fail('Expected JSON response could not be parsed')
+
+                        self.assertIn('status', post_body)
+                        self.assertIn('code_hash', post_body)
 
 class user_obj:
     def __init__(self):
