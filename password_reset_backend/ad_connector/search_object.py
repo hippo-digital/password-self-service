@@ -8,7 +8,7 @@ class search_object:
         query = pyad.adquery.ADQuery()
 
         query.execute_query(attributes = ["distinguishedName", "description", "mobile"],
-                                where_clause = "'cn' = '%s'" % object_cn,
+                                where_clause = "'samAccountName' = '%s'" % object_cn,
                                 base_dn = domain_dn)
 
         results = []

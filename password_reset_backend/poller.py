@@ -22,6 +22,10 @@ class poller():
         self.log = logging.getLogger('password_reset_backend')
 
         self.config = self.loadconfig('config.yml')
+
+        self.domain_dn = self.config['directory']['dn']
+        self.domain_fqdn = self.config['directory']['fqdn']
+
         self.log.info('Configuration: %s' % self.config)
 
         self.salt = ''.join(random.choice(string.printable) for _ in range(100))
@@ -95,9 +99,11 @@ class poller():
         users = None
 
         try:
-            users = q.search(username, self.config['directory']['dn'], self.config['directory']['fqdn'])
+            self.log.info('Searching for user, Username=%s, DN=%s, FQDN=%s' % (username, self.domain_dn, self.domain_fqdn))
+            users = q.search(username, self.domain_dn, self.domain_fqdn)
         except Exception as ex:
             self.log.error('Method=send_code, Message=Error searching for user,username=%s' % username, ex)
+            self.log.exception(ex)
 
         if len(users) == 0:
             self.log.info('Method=send_code, Message=User could not be found in the directory, Username=%s' % username)
