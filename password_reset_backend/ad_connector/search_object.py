@@ -7,7 +7,7 @@ class search_object:
         from pyad import aduser, adquery
         query = pyad.adquery.ADQuery()
 
-        query.execute_query(attributes = ["distinguishedName", "description", "mobile"],
+        query.execute_query(attributes = ["distinguishedName", "description", "mobile", "pager"],
                                 where_clause = "'samAccountName' = '%s'" % object_cn,
                                 base_dn = domain_dn)
 
