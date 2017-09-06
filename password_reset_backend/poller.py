@@ -220,8 +220,15 @@ class poller():
     def verify_ticket(self, username, ticket):
         request_body = self.session_service_template.replace('{{ ticket }}', ticket)
 
-        response = requests.post(self.auth_service_validate_ticket_uri, data=request_body)
+        try:
+            response = requests.post(self.auth_service_validate_ticket_uri, data=request_body)
+        except Exception as ex:
+            self.log.exception(ex)
+            self.log.error('Failed to request authvalidate')
+            return False
+
         response_body = response.content.decode('utf-8')
+        self.log.info('Message=Response received from Spine, Response=%s' % response_body)
 
         user_details = self.get_user(username)
         registered_uuid = user_details['pager']
