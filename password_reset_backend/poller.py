@@ -181,7 +181,7 @@ class poller():
                 requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id), data='The reset code supplied was incorrect')
             else:
                 self.reset_ad_password(username, password)
-                requests.post('%s/resetresponse/%s/OK' % (self.config['frontend']['address'], id), data='')
+                requests.post('%s/resetresponse/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'OK'}))
         else:
             raise(Exception())
 
