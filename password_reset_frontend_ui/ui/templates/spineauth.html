@@ -50,7 +50,7 @@
             setTimeout(widget, 500);
         } else {
             document.cookie = "ticket=;";
-            window.location.href = "/spineauth/" + encodeURI(ticket);
+            window.location.href = "/spineauth/{{ fields.id }}/{{ fields.username }}/" + encodeURI(ticket);
         }
     }
 
