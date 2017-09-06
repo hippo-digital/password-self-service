@@ -13,18 +13,23 @@ class tests(unittest.TestCase):
 
     def get_code(self):
         sms_uri = 'https://rest.textmagic.com/api/v2/replies?limit=1'
+        reset_method_uri = '%s/reset_method' % self.frontend_address
         code_uri = '%s/code' % self.frontend_address
+        username = 'test_user_1'
 
         code_requested = datetime.now(tz=tz.tzutc())
         message_timestamp = code_requested
 
-        response = requests.post(code_uri, data={'username': 'test_user_1'}, verify=False)
-        body = response.content.decode('utf-8')
+        reset_method_response = requests.post(reset_method_uri, data={'username': username, 'reset_method': 'code'}, verify=False)
+        reset_method_body = reset_method_response.content.decode('utf-8')
 
-        id_field_definition = re.search('(<input name=\"id\".*)', body).groups(0)[0]
-        code_hash_field_definition = re.search('(<input name=\"code_hash\".*)', body).groups(0)[0]
-
+        id_field_definition = re.search('(<input name=\"id\".*)', reset_method_body).groups(0)[0]
         id = re.findall('(?:value=\")([a-z,A-Z,0-9,/+=]*)', id_field_definition)[0]
+
+        code_response = requests.post(code_uri, data={'username': username, 'id': id}, verify=False)
+        code_body = code_response.content.decode('utf-8')
+
+        code_hash_field_definition = re.search('(<input name=\"code_hash\".*)', code_body).groups(0)[0]
         code_hash = re.findall('(?:value=\")([a-z,A-Z,0-9,/+=]*)', code_hash_field_definition)[0]
 
         while (message_timestamp <= code_requested):
@@ -46,9 +51,18 @@ class tests(unittest.TestCase):
             code = code.replace(' ', '')
             return {'code': code,
                     'code_hash': code_hash,
-                    'id': id}
+                    'id': id,
+                    'username': username}
         else:
             return None
+
+    def get_password_page(self, code_details):
+        code_uri = '%s/code' % self.frontend_address
+
+        password_response = requests.post(code_uri, data=code_details)
+        password_body = password_response.content.decode('utf-8')
+
+        return {'body': password_body, 'form_fields': {}}
 
     def reset_password(self, code, code_hash, id):
         reset_uri = '%s/reset' % self.frontend_address
@@ -64,13 +78,23 @@ class tests(unittest.TestCase):
 
         return 'You can now log in using the password you set.' in reset_response.content.decode('utf-8')
 
-    def test_whenUsernameIsSubmitted_aResettCodeIsSentViaSMS(self):
-        code = self.get_code()['code']
+    def test_whenValidUsernameIsSubmitted_aResettCodeIsSentViaSMS(self):
+        code_details = self.get_code()['code']
+        code = code_details['code']
 
         if code == None:
             self.fail('No codes or more than one code found in text message')
         else:
             self.assertTrue(True, 'Code successfully received')
+
+    def test_whenVaildUsernameAndCodeIsSubmitted_theResetPasswordScreenIsPresented(self):
+        code_details = self.get_code()
+
+        password_details = self.get_password_page(code_details)
+        password_body = password_details['body']
+
+        self.assertIn('<input name="password"', password_body)
+        self.assertIn('<input name="password-confirm"', password_body)
 
     def test_whenFlowCompletedWithResetViaSMS_successfullySetsNewPasswordOnADAccount(self):
         code_response = self.get_code()

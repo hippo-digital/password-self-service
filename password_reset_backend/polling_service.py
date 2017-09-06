@@ -50,7 +50,7 @@ class polling_service(win32serviceutil.ServiceFramework):
             try:
                 self.poller.poll()
             except Exception as e:
-                self.log.error('Poll failed for reason: ' + e)
+                self.log.error('Poll failed for reason: %s' % e)
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
