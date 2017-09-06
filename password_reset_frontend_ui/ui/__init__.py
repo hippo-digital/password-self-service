@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect
+from flask import Flask, request, render_template, redirect, url_for
 import requests
 import logging, os
 import string
@@ -15,6 +15,7 @@ import yaml
 
 app = Flask(__name__)
 
+#app.add_url_rule('/favicon.ico', redirect_to=url_for('static', filename='favicon.ico'))
 
 
 @app.before_request
@@ -33,6 +34,7 @@ def log_request():
                 request.args,
                 request.form,
                 request.data.decode('utf-8')))
+
 
 @app.route('/')
 def start():
@@ -80,20 +82,42 @@ def code():
     else:
         store_request(id, 'code', {'username': username})
 
-        code_hash = None
-        timeout_counter = 0
+        result = await_and_get_backend_response(id, 'code_responses')
 
-        while code_hash == None and timeout_counter < backend_wait_time_seconds:
-            timeout_counter += 1
-            time.sleep(1)
-            response_raw = storage.hget('code_responses', id)
+        if result['status'] == 'timeout':
+            return fields_render('failed', fields={'message': 'Failed to get response from server in a timely manner.  Please contact IT support.'})
+        elif result['status'] == 'invalid':
+            return fields_render('failed', fields={'message': 'A problem occurred that requires further investigation.  Please contact IT support.'})
+        elif result['status'] == 'Failed':
+            if 'message' in result:
+                return fields_render('failed', fields={'message': result['message']})
+            else:
+                return fields_render('failed', fields={'message': 'An unexplained error occurred.  Please contact IT support.'})
+        elif result['status'] != 'OK':
+            return fields_render('failed', fields={'message': 'An expected error occurred.  Please contact IT support.'})
+        else: # OK
+            return fields_render('code', {'username': username, 'id': id, 'code_hash': result['code_hash']})
 
-            if response_raw != None:
-                code_hash = response_raw
+def await_and_get_backend_response(id, storage_key):
+    res = {}
+    timeout_counter = 0
 
-                return fields_render('code', {'username': username, 'id': id, 'code_hash': code_hash})
+    while res == {} and timeout_counter < backend_wait_time_seconds:
+        timeout_counter += 1
+        time.sleep(1)
+        response_raw = storage.hget(storage_key, id)
 
-        return fields_render('failed', fields={'message': 'Failed to get response from server'})
+        if response_raw != None:
+            try:
+                res = json.loads(response_raw)
+            except Exception as ex:
+                return {'status': 'invalid'}
+
+        if 'status' in res:
+            return res
+
+
+    return {'status': 'timeout'}
 
 @app.route('/password/<evidence>', methods=['POST'])
 def password(evidence):

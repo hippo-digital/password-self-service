@@ -169,6 +169,54 @@ class tests(unittest.TestCase):
         self.assertEqual('code', request['type'])
         self.assertEqual({'username': 'wibble'}, request['request_content'])
 
+    def test__code__whenCalledWithInvalidAccountName__returnsPageWithSuitableError(self):
+        self.clear_requests()
+        reset_request_form = {'id': 'nY0WZvm2n9go',
+                              'username': 'wibble'}
+
+        storage.hset('code_responses', 'nY0WZvm2n9go', json.dumps({'status': 'Failed'}))
+
+        code_response = self.app.post('/code', data=reset_request_form)
+        body = code_response.data.decode('utf-8')
+
+        self.assertNotIn('<input name="id"', body)
+        self.assertNotIn('<input name="username"', body)
+        self.assertNotIn('<input name="code_hash"', body)
+        self.assertNotIn('<input name="code"', body)
+
+    def test__code__whenCalledWithValidAccountName__returnsPageWithPromptForCodeEntry(self):
+        self.clear_requests()
+        test_id = 'nY0WZvm2n9go'
+        test_code_hash = 'BejwKVfTTGEdxkQEEOTEZpxnMyMMStsbeIC9iG3J2DABudyYQJnZdRlDzAPJWg3BQtNeeqKjN3K46QRmMthzRA=='
+        reset_request_form = {'id': test_id,
+                              'username': 'wibble'}
+
+        storage.hset('code_responses', test_id, json.dumps({'status': 'OK', 'code_hash': test_code_hash}))
+
+        code_response = self.app.post('/code', data=reset_request_form)
+        body = code_response.data.decode('utf-8')
+
+        self.assertIn('value="%s"' % test_id, body)
+        self.assertIn('value="%s"' % test_code_hash, body)
+        self.assertIn('<input name="code"', body)
+
+    def test__code__whenCalledAndServerReceivesInvalidResponse__returnsPageWithSuitableError(self):
+        self.clear_requests()
+        test_id = 'nY0WZvm2n9go'
+        reset_request_form = {'id': test_id,
+                              'username': 'wibble'}
+
+        storage.hset('code_responses', test_id, 'coconuts')
+
+        code_response = self.app.post('/code', data=reset_request_form)
+        body = code_response.data.decode('utf-8')
+
+        self.assertNotIn('<input name="id"', body)
+        self.assertNotIn('<input name="username"', body)
+        self.assertNotIn('<input name="code_hash"', body)
+        self.assertNotIn('<input name="code"', body)
+        self.assertIn('A problem occurred that requires further investigation', body)
+
     def test__reset__whenCodeAndPasswordIsSupplied__storesRequestForReset(self):
         self.clear_requests()
         #ui.public_key = self.test_private_key

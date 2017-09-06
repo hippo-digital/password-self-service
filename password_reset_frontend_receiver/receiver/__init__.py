@@ -39,35 +39,35 @@ def requests():
 
     return json.dumps(outstanding_requests)
 
-@app.route('/resetresponse/<id>/<status>', methods=['POST'])
-def resetresponse(id, status):
-    if len(id) != 12:
-        return 500
-
-    if len(request.data) < 250:
-        body = request.data.decode('utf-8')
-
-        if status == 'OK':
-            storage.hset('reset_responses', id, json.dumps({'status': 'OK'}))
-
-        if status == 'Failed':
-            storage.hset('reset_responses', id, json.dumps({'status': 'Failed', 'message': body}))
-
-    return 'OK'
 
 @app.route('/coderesponse/<id>/<status>', methods=['POST'])
 def coderesponse(id, status):
+    body = request.data.decode('utf-8')
+    return parse_and_store_response(id, status, body, 'code_responses')
+
+@app.route('/resetresponse/<id>/<status>', methods=['POST'])
+def resetresponse(id, status):
+    body = request.data.decode('utf-8')
+    return parse_and_store_response(id, status, body, 'reset_responses')
+
+def parse_and_store_response(id, status, body, storage_key):
     if len(id) != 12:
         return 500
 
     if len(request.data) < 250:
-        body = request.data.decode('utf-8')
+        invalid_data_response = json.dumps({'status': 'Failed', 'message': 'An invalid response was received from the server'})
 
-        if status == 'OK':
-            storage.hset('code_responses', id, body)
+        try:
+            body_data = json.loads(body)
+        except Exception as ex:
+            storage.hset(storage_key, id, invalid_data_response)
+            return 500
 
-        if status == 'Failed':
-            storage.hset('code_responses', id, json.dumps({'status': 'Failed', 'message': body}))
+        if 'status' in body_data and (body_data['status'] == 'OK' or body_data['status'] == 'Failed'):
+            storage.hset(storage_key, id, body)
+        else:
+            storage.hset(storage_key, id, invalid_data_response)
+            return 500
 
     return 'OK'
 
