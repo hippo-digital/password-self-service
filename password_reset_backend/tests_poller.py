@@ -148,6 +148,14 @@ class tests_poller(unittest.TestCase):
                         self.assertIn('status', post_body)
                         self.assertIn('code_hash', post_body)
 
+    def test__verify_ticket__whenCalledWithValidTicketAndMockedService__returnsTrue(self):
+        p = poller.poller()
+
+        test = p.verify_ticket('wibble')
+
+        None
+
+
 class user_obj:
     def __init__(self):
         self.entry_dn = ''

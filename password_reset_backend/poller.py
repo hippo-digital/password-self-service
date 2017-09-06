@@ -19,12 +19,22 @@ from Crypto.Cipher import AES, PKCS1_OAEP
 
 class poller():
     def __init__(self):
+        self.session_service_template = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RequestSet vers="1.0" svcid="session" reqid="1">
+<Request><![CDATA[<SessionRequest vers="1.0" reqid="0">
+<GetSession reset="true">
+<SessionID>{{ ticket }}</SessionID>
+</GetSession>
+</SessionRequest>]]>
+</Request>
+</RequestSet>"""
         self.log = logging.getLogger('password_reset_backend')
 
         self.config = self.loadconfig('config.yml')
 
         self.domain_dn = self.config['directory']['dn']
         self.domain_fqdn = self.config['directory']['fqdn']
+        self.auth_service_validate_ticket_uri = '%s/amserver/sessionservice' % self.config['auth_service']['address']
 
         self.log.info('Configuration: %s' % self.config)
 
@@ -166,24 +176,75 @@ class poller():
 
             evidence = self.unwrap_request(evidence_raw)
 
-            code = evidence['code']
-            code_hash = evidence['code_hash']
+            verified = False
 
-            self.log.info('Method=reset_request, Username=%s, Code=%s, CodeHash=%s, ID=%s' % (
-                username,
-                code,
-                code_hash,
-                id))
+            if 'code_hash' in evidence:
+                code = evidence['code']
+                code_hash = evidence['code_hash']
 
-            expected_hash = self.generate_code_hash(username, code, id)
+                verified = self.check_code(id, username, code, code_hash)
 
-            if expected_hash != code_hash:
-                requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id), data='The reset code supplied was incorrect')
-            else:
+                if not verified:
+                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                  data=json.dumps({'status': 'Failed', 'message': 'The reset code supplied was incorrect'}))
+            elif 'ticket' in evidence:
+
+                ticket = evidence['ticket']
+
+                verified = self.verify_ticket(username, ticket)
+
+                if not verified:
+                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                  data=json.dumps({'status': 'Failed', 'message': 'There was a problem validating your Smartcard'}))
+
+            if verified:
                 self.reset_ad_password(username, password)
                 requests.post('%s/resetresponse/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'OK'}))
         else:
             raise(Exception())
+
+    def check_code(self, id, username, code, code_hash):
+        self.log.info('Method=reset_request, Username=%s, Code=%s, CodeHash=%s, ID=%s' % (
+            username,
+            code,
+            code_hash,
+            id))
+
+        expected_hash = self.generate_code_hash(username, code, id)
+
+        if expected_hash == code_hash:
+            return True
+
+        return False
+
+    def verify_ticket(self, username, ticket):
+        request_body = self.session_service_template.replace('{{ ticket }}', ticket)
+
+        response = requests.post(self.auth_service_validate_ticket_uri, data=request_body)
+        response_body = response.content.decode('utf-8')
+
+        user_details = self.get_user(username)
+        registered_uuid = user_details['pager']
+
+        ticket_validated = '<Property name="SessionHandle" value="shandle:%s"></Property>' % ticket in response_body
+        username_validated = '<Property name="UserId" value="%s">' % registered_uuid in response_body
+
+        return ticket_validated and username_validated
+
+    def get_user(self, username):
+        q = search_object.search_object()
+        users = None
+
+        try:
+            self.log.info('Searching for user, Username=%s, DN=%s, FQDN=%s' % (username, self.domain_dn, self.domain_fqdn))
+            users = q.search(username, self.domain_dn, self.domain_fqdn)
+        except Exception as ex:
+            self.log.error('Method=send_code, Message=Error searching for user,username=%s' % username, ex)
+            self.log.exception(ex)
+
+        if len(users) == 1:
+            return users[0]
+
 
     def reset_ad_password(self, username, new_password):
         self.log.info('Method=reset_ad_password, Username=%s' % username)
