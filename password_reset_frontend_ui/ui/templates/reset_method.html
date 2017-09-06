@@ -8,8 +8,8 @@
         <input name="{{ field }}" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields[field] }}"></input>
     {% endfor %}
 
-    <input type="radio" name="resetMethod" value="spineauth" id="smartcard" checked>NHS Smartcard<br />
-    <input type="radio" name="resetMethod" value="code" id="mobile">Mobile Phone Code<br />
+    <input type="radio" name="resetMethod" value="code" id="mobile" checked>Mobile Phone Code<br />
+    <input type="radio" name="resetMethod" value="spineauth" id="smartcard">NHS Smartcard (experimental)<br />
 
     <div class="navbuttons">
         <button class="btn" type="submit" value="Submit">Next ></button>

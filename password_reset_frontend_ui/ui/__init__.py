@@ -63,14 +63,14 @@ def reset_method():
     # return basic_render('reset_method')
 
 @app.route('/spineauth', methods=['POST'])
-@app.route('/spineauth/<ticket>', methods=['POST'])
-def spineauth(ticket=None):
+@app.route('/spineauth/<id>/<username>/<ticket>', methods=['GET'])
+#@app.route('/spineauth/<ticket>', methods=['POST', 'GET'])
+def spineauth(ticket=None, id=None, username=None):
     if ticket == None:
-        return basic_render('spineauth')
+        return fields_render('spineauth', {'id': request.form['id'], 'username': request.form['username']})
     else:
-        store_request(id, 'smartcard_validate', {'ticket': ticket})
-
-        return ticket
+        evidence = package_and_encrypt({'ticket': ticket})
+        return redirect('/password/%s/%s/%s' % (id, username, evidence), 307)
 
 @app.route('/code', methods=['POST'])
 def code():
@@ -121,9 +121,11 @@ def await_and_get_backend_response(id, storage_key):
     return {'status': 'timeout'}
 
 @app.route('/password/<evidence>', methods=['POST'])
-def password(evidence):
-    username = request.form['username']
-    id = request.form['id']
+@app.route('/password/<id>/<username>/<evidence>', methods=['GET'])
+def password(evidence, id=None, username=None):
+    if id == None:
+        id = request.form['id']
+        username = request.form['username']
 
     return fields_render('password', {'username': username, 'evidence': evidence, 'id': id})
 
