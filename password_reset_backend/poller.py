@@ -107,7 +107,7 @@ class poller():
 
         if len(users) == 0:
             self.log.info('Method=send_code, Message=User could not be found in the directory, Username=%s' % username)
-            requests.post('%s/coderesponse/%s/Failed' % (self.config['frontend']['address'], id), data='User account could not be found')
+            requests.post('%s/coderesponse/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'User account could not be found'}))
         elif len(users) == 1 and 'mobile' in users[0]:
             user = users[0]
             mobile_number = user['mobile']
@@ -125,7 +125,7 @@ class poller():
 
             try:
                 code_hash = self.generate_code_hash(username, raw_code, id)
-                requests.post('%s/coderesponse/%s/OK' % (self.config['frontend']['address'], id), data=code_hash)
+                requests.post('%s/coderesponse/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'OK', 'code_hash': code_hash}))
             except Exception as ex:
                 self.log.error('Method=send_code, Message=Error setting status on frontend, username=%s, Code=%s' % (username, code), ex)
         else:
