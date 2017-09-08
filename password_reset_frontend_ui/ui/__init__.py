@@ -60,14 +60,14 @@ def reset_method():
         id = get_new_id()
 
         return fields_render('reset_method', {'username': username, 'id': id})
-    # return basic_render('reset_method')
 
 @app.route('/spineauth', methods=['POST'])
 @app.route('/spineauth/<id>/<username>/<ticket>', methods=['GET'])
-#@app.route('/spineauth/<ticket>', methods=['POST', 'GET'])
 def spineauth(ticket=None, id=None, username=None):
     if ticket == None:
         return fields_render('spineauth', {'id': request.form['id'], 'username': request.form['username']})
+    elif ticket == 'null':
+        return fields_render('failed', fields={'message': 'Could not reset your password at this time.'})
     else:
         evidence = package_and_encrypt({'ticket': ticket})
         return redirect('/password/%s/%s/%s' % (id, username, evidence), 307)
@@ -116,7 +116,6 @@ def await_and_get_backend_response(id, storage_key):
 
         if 'status' in res:
             return res
-
 
     return {'status': 'timeout'}
 

@@ -7,20 +7,92 @@
 
 <br />
 
-<form action="/code" method="post">
+<form action="/code" method="post" onsubmit="return isValid()">
 
     {% for field in fields %}
-        <input name="{{ field }}" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields[field] }}"></input>
+        <input name="{{ field }}" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields[field] }}" autocomplete="off"></input>
     {% endfor %}
 
 
-    <p>
+   <div class="password-field">
+       Enter the code that has been sent to your phone<br />
+       <input id="code" name="code" type="text" placeholder="e.g. AB 123 456" autocomplete="off" onkeyup="checkCode();"/>
+
+        <div class="password-advice" id="code-advice">
+            The code has two letters and six digits.<br />
+            <br />
+            You do not need to enter the spaces or use upper case letters.
+        </div>
+    </div>
+
+
+    <!--p>
         Enter the code that has been sent to your phone<br />
-        <input name="code" type="text" placeholder="Reset Code" autocomplete="off"/>
-    </p>
+        <input name="code" type="text" placeholder="E.g. AB 123 456" autocomplete="off"/>
+    </p-->
 
     <div class="navbuttons">
         <button class="btn" type="submit" value="Submit">Next ></button>
     </div>
 
 </form>
+
+
+<script>
+    function isValid() {
+        if (checkCode()) {
+            return true;
+        } else {
+            alert('There is a problem with the code you entered that needs to be resolved before you continue.');
+            return false;
+        }
+    }
+
+    function isValidCode(code) {
+
+        var regExp = /([A-z]{2})(?: ?)([0-9]{3})(?: ?)([0-9]{3})$/;
+
+        var validCode = regExp.test(code);
+
+        return validCode;
+    }
+
+    function checkCode() {
+        control = document.getElementById('code');
+        advice = document.getElementById('code-advice');
+
+        if (isValidCode(control.value)) {
+            markControl(control, 'green');
+            showHideAdvice(advice, false);
+            return true;
+        } else {
+            markControl(control, 'red');
+            showHideAdvice(advice, true);
+            return false;
+        }
+    }
+
+    function markControl(control, colour) {
+        control.style.borderBottomStyle = 'solid';
+        control.style.borderBottomWidth = '5px';
+        control.style.borderBottomColor = colour;
+    }
+
+    function showHideAdvice(control, shown) {
+        if (shown) {
+            control.style.visibility = 'visible';
+            control.style.display = 'inherit';
+            control.style.height = 'auto';
+        } else {
+            control.style.visibility = 'hidden';
+            control.style.display = 'none';
+            control.style.height = '0px';
+        }
+    }
+
+    function caps(id) {
+        document.getElementById(id).value = document.getElementById(id).value.toUpperCase();
+    }
+
+</script>
+

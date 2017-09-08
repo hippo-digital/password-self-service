@@ -29,6 +29,10 @@ input {
 	min-width: 300px;
 }
 
+input, radio {
+    min-width: 50px;
+}
+
 input: hover{}
 
 button {
@@ -120,5 +124,18 @@ button:hover {
 	}
 }
 
+.password-advice {
+    font-size: 0.8em;
+    color: gray;
+    padding-top: 0px;
+    margin-top: 0px;
+    padding-left: 20px;
+    visibility: hidden;
+    display: none;
+    height: 0px;
+}
 
+.password-field {
+    padding-bottom: 25px;
+}
 
