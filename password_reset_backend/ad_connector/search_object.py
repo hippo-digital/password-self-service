@@ -2,7 +2,7 @@
 # from pyad import aduser, adquery
 
 class search_object:
-    def search(self, object_cn, domain_dn, server):
+    def search(self, object_cn, domain_dn):
         import pyad
         from pyad import aduser, adquery
         query = pyad.adquery.ADQuery()
