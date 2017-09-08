@@ -33,14 +33,12 @@ class poller():
         self.config = self.loadconfig('config.yml')
 
         self.domain_dn = self.config['directory']['dn']
-        self.domain_fqdn = self.config['directory']['fqdn']
         self.auth_service_validate_ticket_uri = '%s/amserver/sessionservice' % self.config['auth_service']['address']
 
         self.log.info('Configuration: %s' % self.config)
 
         self.salt = ''.join(random.choice(string.printable) for _ in range(100))
         self.private_key = RSA.importKey(base64.b64decode(self.config['private_key']))
-
 
     def poll(self):
         reqs = {}
@@ -66,7 +64,7 @@ class poller():
                     content = unwrapped_request['request_content']
                     request_type = unwrapped_request['type']
 
-                    self.log.info('Request Type: %s,  ID: %s, Content: %s' % (request_type, id, content))
+                    self.log.info('Request Type: %s,  ID: %s' % (request_type, id))
 
                     if request_type == 'code':
                         if 'username' in content:
@@ -109,8 +107,8 @@ class poller():
         users = None
 
         try:
-            self.log.info('Searching for user, Username=%s, DN=%s, FQDN=%s' % (username, self.domain_dn, self.domain_fqdn))
-            users = q.search(username, self.domain_dn, self.domain_fqdn)
+            self.log.info('Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
+            users = q.search(username, self.domain_dn)
         except Exception as ex:
             self.log.error('Method=send_code, Message=Error searching for user,username=%s' % username, ex)
             self.log.exception(ex)
@@ -198,10 +196,33 @@ class poller():
                                   data=json.dumps({'status': 'Failed', 'message': 'There was a problem validating your Smartcard'}))
 
             if verified:
-                self.reset_ad_password(username, password)
-                requests.post('%s/resetresponse/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'OK'}))
-        else:
-            raise(Exception())
+                try:
+                    self.reset_ad_password(username, password)
+                    requests.post('%s/resetresponse/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'OK'}))
+                except ComplexityNotMetException:
+                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                  data=json.dumps({'status': 'Failed',
+                                                   'message': 'Password does not meet complexity requirements'}))
+                except ComplexityNotMetException:
+                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                  data=json.dumps(
+                                      {'status': 'Failed',
+                                       'message': 'Password does not meet complexity requirements'}))
+                except UserDoesNotExistException:
+                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                  data=json.dumps(
+                                      {'status': 'Failed',
+                                       'message': 'The user does not exist in the directory'}))
+                except CannotConnectToDirectoryException:
+                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                  data=json.dumps(
+                                      {'status': 'Failed', 'message': 'Could not connect to the directory'}))
+                except AccessIsDeniedException:
+                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps(
+                        {'status': 'Failed', 'message': 'The account could not be reset due to a permissions issue'}))
+
+            else:
+                raise(Exception())
 
     def check_code(self, id, username, code, code_hash):
         self.log.info('Method=reset_request, Username=%s, Code=%s, CodeHash=%s, ID=%s' % (
@@ -243,8 +264,8 @@ class poller():
         users = None
 
         try:
-            self.log.info('Searching for user, Username=%s, DN=%s, FQDN=%s' % (username, self.domain_dn, self.domain_fqdn))
-            users = q.search(username, self.domain_dn, self.domain_fqdn)
+            self.log.info('Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
+            users = q.search(username, self.domain_dn,)
         except Exception as ex:
             self.log.error('Method=send_code, Message=Error searching for user,username=%s' % username, ex)
             self.log.exception(ex)
@@ -252,9 +273,11 @@ class poller():
         if len(users) == 1:
             return users[0]
 
-
     def reset_ad_password(self, username, new_password):
         self.log.info('Method=reset_ad_password, Username=%s' % username)
+        from pyad import pyadexceptions
+
+        import pywintypes
 
         try:
             q = search_object.search_object()
@@ -262,21 +285,34 @@ class poller():
             self.log.error('Failed search for user in AD', ex)
 
         try:
-            users = q.search(username, self.config['directory']['dn'], self.config['directory']['fqdn'])
+            users = q.search(username, self.domain_dn)
+        except pywintypes.com_error as ex:
+            if 'referral was returned' in ex.excepinfo[2]:
+                raise(CannotConnectToDirectoryException)
+            else:
+                raise(ex)
         except Exception as ex:
             self.log.error('Failed search for user in AD', ex)
 
         if len(users) != 1:
             self.log.error('Could not find specified user in AD')
-            raise Exception('Incorrect')
+            raise(UserDoesNotExistException)
 
         user = users[0]
 
         try:
             pwd = set_password.set_password()
             pwd.set(user['distinguishedName'], new_password, self.config['directory']['dn'], self.config['directory']['fqdn'])
+        except pyadexceptions.win32Exception as ex:
+            if ex.error_info['error_code'] == '0x80070005':
+                raise(AccessIsDeniedException)
+            elif ex.error_info['error_code'] == '0x800708c5':
+                raise (ComplexityNotMetException)
+            else:
+                raise(ex)
         except Exception as ex:
             self.log.error('Failed to set password in AD', ex)
+            raise(ex)
 
     def loadconfig(self, config_file_path):
         script_path = os.path.dirname(os.path.realpath(__file__))
@@ -290,15 +326,16 @@ class poller():
         b64_hash = base64.b64encode(hash).decode('utf-8')
         return b64_hash
 
+class ComplexityNotMetException(Exception):
+    None
 
-# if __name__ == '__main__':
-#     p = poller()
-#
-#     while True:
-#         try:
-#             p.poll()
-#         except Exception as ex:
-#             print(ex)
-#
-#         time.sleep(1)
+class UserDoesNotExistException(Exception):
+    None
+
+class CannotConnectToDirectoryException(Exception):
+    None
+
+class AccessIsDeniedException(Exception):
+    None
+
 

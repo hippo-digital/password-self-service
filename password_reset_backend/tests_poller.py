@@ -110,7 +110,7 @@ class tests_poller(unittest.TestCase):
             from ad_connector import search_object
 
             so = search_object.search_object()
-            so.search('test_cn', 'test_domain', 'test_server')
+            so.search('test_cn', 'test_domain')
             None
 
     def test__poll__whenSingleRequestForCodeRetrieved__calls_send_sms(self):
@@ -151,9 +151,29 @@ class tests_poller(unittest.TestCase):
     def test__verify_ticket__whenCalledWithValidTicketAndMockedService__returnsTrue(self):
         p = poller.poller()
 
-        test = p.verify_ticket('wibble')
+        test = p.verify_ticket('test_user_1', 'wibble')
 
         None
+
+    def test__set_ad_password__whenCalledWithPasswordThatFailsComplexityRequirements__throwsComplexityNotMetException(
+            self):
+        p = poller.poller()
+
+        with self.assertRaises(poller.ComplexityNotMetException):
+            p.reset_ad_password('test_user_1', 'x')
+
+    def test__set_ad_password__whenCalledWithUserThatDoesNotExist__throwsUserDoesNotExistException(self):
+        p = poller.poller()
+
+        with self.assertRaises(poller.UserDoesNotExistException):
+            p.reset_ad_password('keith', 'x')
+
+    def test__set_ad_password__whenCalledWithInvalidDomain__throwsCannotConnectToDirectoryException(self):
+        p = poller.poller()
+        p.domain_dn = 'DC=wibble,DC=bye'
+
+        with self.assertRaises(poller.CannotConnectToDirectoryException):
+            p.reset_ad_password('test_user_1', 'Str0ngP@sswCrdB6')
 
 
 class user_obj:
@@ -162,5 +182,5 @@ class user_obj:
         self.entry_attributes_as_dict = {'sn': ['Smith'], 'givenName': ['Sandra'], 'mail': ['sandra.smith@example.org'], 'mobile': ['123456']}
 
 class wibble:
-    def search(self, a, b, c):
+    def search(self, a, b):
         return [{'sn': 'Smith', 'givenName': 'Sandra', 'mail': 'sandra.smith@example.org', 'mobile': '123456'}]
