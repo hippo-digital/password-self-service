@@ -78,6 +78,9 @@
   file: path=/home/{{ type }}service/password-self-service state=directory owner={{ type }}service group={{ type }}service recurse=yes
 
 
+- name: Delete default site
+  template: dest=/etc/nginx/sites-available/default state=absent
+
 - name: HTTP Redirect Site
   template: src=http-redirect dest=/etc/nginx/sites-available/http-redirect mode=0644
 
