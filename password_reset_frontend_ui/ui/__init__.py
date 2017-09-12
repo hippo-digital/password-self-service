@@ -38,6 +38,7 @@ def log_request():
 
 
 @app.route('/')
+@app.route('/start')
 def start():
     return basic_render('start')
 
