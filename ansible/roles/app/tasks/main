@@ -46,6 +46,9 @@
 - name: Install Flask
   pip: name=flask state=present virtualenv=/home/{{ type }}service/password-self-service/password_reset_frontend_ui virtualenv_python=python3
 
+- name: Install PyCrypto
+  pip: name=pycrypto state=present virtualenv=/home/{{ type }}service/password-self-service/password_reset_frontend_ui virtualenv_python=python3
+
 
 
 - name: Install PyYAML
