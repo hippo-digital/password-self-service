@@ -9,7 +9,7 @@ import time
 
 class tests(unittest.TestCase):
     def setUp(self):
-        self.frontend_address = 'http://127.0.0.1:5000'
+        self.frontend_address = 'http://127.0.0.1:5001'
 
     def get_code(self):
         sms_uri = 'https://rest.textmagic.com/api/v2/replies?limit=1'
@@ -64,22 +64,29 @@ class tests(unittest.TestCase):
 
         return {'body': password_body, 'form_fields': {}}
 
-    def reset_password(self, code, code_hash, id):
+    def reset_password(self, password, username=None):
+        form_fields = self.get_code()
+
+        password_details = self.get_password_page(form_fields)
+        password_body = password_details['body']
+
+        evidence_field_definition = re.search('(<input name=\"evidence\".*)', password_body).groups(0)[0]
+        form_fields['evidence'] = re.findall('(?:value=\")([^"]*)', evidence_field_definition)[0]
+
         reset_uri = '%s/reset' % self.frontend_address
 
-        data = {'username': 'test_user_1',
-                'code': code,
-                'code_hash': code_hash,
-                'id': id,
-                'password': 'Wibble123!',
-                'password-confirm': 'Wibble123!'}
+        form_fields['password'] = password
+        form_fields['password-confirm'] = form_fields['password']
 
-        reset_response = requests.post(reset_uri, data=data, verify=False)
+        if username != None:
+            form_fields['username'] = username
 
-        return 'You can now log in using the password you set.' in reset_response.content.decode('utf-8')
+        reset_response = requests.post(reset_uri, data=form_fields, verify=False)
 
-    def test_whenValidUsernameIsSubmitted_aResettCodeIsSentViaSMS(self):
-        code_details = self.get_code()['code']
+        return reset_response.content.decode('utf-8')
+
+    def test_whenValidUsernameIsSubmitted_aResetCodeIsSentViaSMS(self):
+        code_details = self.get_code()
         code = code_details['code']
 
         if code == None:
@@ -87,7 +94,7 @@ class tests(unittest.TestCase):
         else:
             self.assertTrue(True, 'Code successfully received')
 
-    def test_whenVaildUsernameAndCodeIsSubmitted_theResetPasswordScreenIsPresented(self):
+    def test_whenValidUsernameAndCodeIsSubmitted_theResetPasswordScreenIsPresented(self):
         code_details = self.get_code()
 
         password_details = self.get_password_page(code_details)
@@ -97,13 +104,18 @@ class tests(unittest.TestCase):
         self.assertIn('<input name="password-confirm"', password_body)
 
     def test_whenFlowCompletedWithResetViaSMS_successfullySetsNewPasswordOnADAccount(self):
-        code_response = self.get_code()
+        reset_response = self.reset_password('Wibble123!')
 
-        reset_response = self.reset_password(code_response['code'],
-                                             code_response['code_hash'],
-                                             code_response['id'])
+        self.assertIn('You can now log in using the password you set.', reset_response, 'Expected successful response from reset call not received.')
 
-        self.assertTrue(reset_response, 'Expected successful response from reset call not received.')
+    def test_whenPasswordChangeSubmittedWithWeakPassword_complexityErrorMessageReturned(self):
+        reset_response = self.reset_password('weak')
 
-        None
+        self.assertIn('Password does not meet complexity requirements', reset_response, 'Expected failure response from reset call not received.')
+
+    def test_whenPasswordChangeSubmittedWithInvalidUser_userInvalidErrorMessageReturned(self):
+        reset_response = self.reset_password('Wibble123!', username='does_not_exist')
+
+        self.assertIn('The user does not exist in the directory', reset_response, 'Expected failure response from reset call not received.')
+
 

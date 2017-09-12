@@ -50,6 +50,11 @@ def resetresponse(id, status):
     body = request.data.decode('utf-8')
     return parse_and_store_response(id, status, body, 'reset_responses')
 
+@app.route('/sendmessage', methods=['POST'])
+def send_message():
+    body = request.data.decode('utf-8')
+    return 200
+
 def parse_and_store_response(id, status, body, storage_key):
     if len(id) != 12:
         return 500

@@ -5,7 +5,7 @@
 
 <form action="/reset_method" method="post">
     {% for field in fields %}
-        <input name="{{ field }}" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields[field] }}"></input>
+        <input name="{{ field }}" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields[field] }}" autocomplete="off"></input>
     {% endfor %}
 
     <input type="radio" name="resetMethod" value="code" id="mobile" checked>Mobile Phone Code<br />
