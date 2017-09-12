@@ -155,25 +155,25 @@ class tests_poller(unittest.TestCase):
 
         None
 
-    def test__set_ad_password__whenCalledWithPasswordThatFailsComplexityRequirements__throwsComplexityNotMetException(
-            self):
-        p = poller.poller()
-
-        with self.assertRaises(poller.ComplexityNotMetException):
-            p.reset_ad_password('test_user_1', 'x')
-
-    def test__set_ad_password__whenCalledWithUserThatDoesNotExist__throwsUserDoesNotExistException(self):
-        p = poller.poller()
-
-        with self.assertRaises(poller.UserDoesNotExistException):
-            p.reset_ad_password('keith', 'x')
-
-    def test__set_ad_password__whenCalledWithInvalidDomain__throwsCannotConnectToDirectoryException(self):
-        p = poller.poller()
-        p.domain_dn = 'DC=wibble,DC=bye'
-
-        with self.assertRaises(poller.CannotConnectToDirectoryException):
-            p.reset_ad_password('test_user_1', 'Str0ngP@sswCrdB6')
+    # *** Move to integration tests
+    # def test__set_ad_password__whenCalledWithPasswordThatFailsComplexityRequirements__throwsComplexityNotMetException(self):
+    #     p = poller.poller()
+    #
+    #     with self.assertRaises(poller.ComplexityNotMetException):
+    #         p.reset_ad_password('test_user_1', 'x')
+    #
+    # def test__set_ad_password__whenCalledWithUserThatDoesNotExist__throwsUserDoesNotExistException(self):
+    #     p = poller.poller()
+    #
+    #     with self.assertRaises(poller.UserDoesNotExistException):
+    #         p.reset_ad_password('keith', 'x')
+    #
+    # def test__set_ad_password__whenCalledWithInvalidDomain__throwsCannotConnectToDirectoryException(self):
+    #     p = poller.poller()
+    #     p.domain_dn = 'DC=wibble,DC=bye'
+    #
+    #     with self.assertRaises(poller.CannotConnectToDirectoryException):
+    #         p.reset_ad_password('test_user_1', 'Str0ngP@sswCrdB6')
 
 
 class user_obj:
