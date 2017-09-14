@@ -63,15 +63,24 @@ def reset_method():
         return fields_render('reset_method', {'username': username, 'id': id})
 
 @app.route('/spineauth', methods=['POST'])
-@app.route('/spineauth/<id>/<username>/<ticket>', methods=['GET'])
-def spineauth(ticket=None, id=None, username=None):
-    if ticket == None:
-        return fields_render('spineauth', {'id': request.form['id'], 'username': request.form['username']})
-    elif ticket == 'null':
-        return fields_render('failed', fields={'message': 'Could not reset your password at this time.'})
+def spineauth():
+    if 'id' in request.form and 'username' in request.form:
+        id = request.form['id']
+        username = request.form['username']
+
+        if 'ticket' in request.form:
+            ticket = request.form['ticket']
+
+            if ticket == 'null':
+                return fields_render('failed', fields={'message': 'Could not reset your password at this time.'})
+
+            evidence = package_and_encrypt({'ticket': ticket})
+            return redirect('/password/%s' % (evidence), 307)
+
+        return fields_render('spineauth', {'id': id, 'username': username})
     else:
-        evidence = package_and_encrypt({'ticket': ticket})
-        return redirect('/password/%s/%s/%s' % (id, username, evidence), 307)
+        return 500
+
 
 @app.route('/code', methods=['POST'])
 def code():
@@ -121,7 +130,6 @@ def await_and_get_backend_response(id, storage_key):
     return {'status': 'timeout'}
 
 @app.route('/password/<evidence>', methods=['POST'])
-@app.route('/password/<id>/<username>/<evidence>', methods=['GET'])
 def password(evidence, id=None, username=None):
     if id == None:
         id = request.form['id']
