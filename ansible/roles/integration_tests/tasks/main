@@ -1,21 +1,38 @@
 ---
+- name: Install Python 3.4.3
+  win_chocolatey: name=python version=3.4.3
+
+- name: Create temp directory
+  win_file: path=c:\\temp state=directory
+
+#- name: Download PyCrypto
+#  win_get_url: url=http://www.voidspace.org.uk/python/pycrypto-2.6.1/pycrypto-2.6.1.win-amd64-py3.4.msi dest=C:\\temp\\pycrypto-2.6.1.win-amd64-py3.4.msi
+
+- name: Install PyAD
+  win_command: C:\\\\tools\\\\python\\\\scripts\\\\pip install https://github.com/zakird/pyad/archive/master.zip creates=C:\\tools\\python\\Lib\\site-packages\\pyad
+
+- name: Install requests
+  win_command: C:\\\\tools\\\\python\\\\scripts\\\\pip install requests creates=C:\\tools\\python\\Lib\\site-packages\\requests
+
+- name: Install twilio
+  win_command: C:\\\\tools\\\\python\\\\scripts\\\\pip install twilio creates=C:\\tools\\python\\Lib\\site-packages\\twilio
+
 - name: Install PyYAML
-  pip: name=pyyaml state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+  win_command: C:\\\\tools\\\\python\\\\scripts\\\\pip install PyYAML creates=C:\\tools\\python\\Lib\\site-packages\\yaml
 
-- name: Install Requests
-  pip: name=requests state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+- name: Install redis
+  win_command: C:\\\\tools\\\\python\\\\scripts\\\\pip install redis creates=C:\\tools\\python\\Lib\\site-packages\\redis
 
-- name: Install PyRedis
-  pip: name=redis state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+- name: Install PyCrypto
+  win_package: path=http://www.voidspace.org.uk/python/pycrypto-2.6.1/pycrypto-2.6.1.win-amd64-py3.4.msi
 
-- name: Install UWSGI
-  pip: name=uwsgi state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+- name: Create working directory
+  win_file: path=C:\\password_reset_backend\\ state=directory
 
-- name: Install Flask
-  pip: name=flask state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+- name: Copy backend application files
+  win_copy: src=../clean_repo/password_reset_backend/ dest=C:\\password_reset_backend\\
 
-- name: Install dateutil
-  pip: name=python-dateutil state=present virtualenv=/home/pwdservice/password-self-service/integration_tests virtualenv_python=python3
+
 
 
 - name: Run Tests
@@ -25,6 +42,5 @@
     executable: /bin/bash
   become: yes 
   become_user: pwdservice
-  
 
 
