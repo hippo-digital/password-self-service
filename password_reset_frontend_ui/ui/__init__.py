@@ -46,6 +46,66 @@ def start():
 def username():
     return basic_render('username')
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if 'username' not in request.form:
+        return basic_render('register')
+    elif 'id' in request.form \
+            and 'username' in request.form \
+            and 'dn' in request.form \
+            and 'mobile' in request.form \
+            and 'uid' in request.form \
+            and 'evidence' in request.form:
+        id = request.form['id']
+        username = request.form['username']
+        dn = request.form['dn']
+        mobile = request.form['mobile']
+        uid = request.form['uid']
+        evidence = request.form['evidence']
+
+        store_request(id, 'set_user_details', {'id': id,
+                                               'username': username,
+                                               'evidence': evidence,
+                                               'dn': dn,
+                                               'mobile': mobile,
+                                               'uid': uid})
+
+        res = await_and_get_backend_response(id, 'set_user_details_responses')
+
+        if 'status' in res:
+            if res['status'] == 'OK':
+                return basic_render('register_complete')
+            else:
+                return fields_render('failed', fields={'message': res['message']})
+        else:
+            return fields_render('failed', fields={'message': 'No response from server, please contact a system administrator'})
+
+    elif 'username' in request.form \
+            and 'password' in request.form:
+        id = get_new_id()
+        username = request.form['username']
+        password = request.form['password']
+
+        evidence = package_and_encrypt({'password': password})
+
+        store_request(id, 'get_user_details', {'username': username, 'evidence': evidence})
+
+        res = await_and_get_backend_response(id, 'get_user_details_responses')
+
+        if 'status' in res:
+            if res['status'] == 'OK':
+                return fields_render('update_details', fields={'id': id,
+                                                               'username': username,
+                                                               'evidence': evidence,
+                                                               'dn': res['dn'],
+                                                               'mobile': res['mobile'],
+                                                               'uid': res['uid']})
+            else:
+                return fields_render('failed', fields={'message': res['message']})
+        else:
+            return fields_render('failed', fields={'message': 'No response from server, please contact a system administrator'})
+
+
 @app.route('/reset_method', methods=['POST'])
 def reset_method():
     username = request.form['username']

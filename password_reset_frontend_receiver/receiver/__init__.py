@@ -50,6 +50,16 @@ def resetresponse(id, status):
     body = request.data.decode('utf-8')
     return parse_and_store_response(id, status, body, 'reset_responses')
 
+@app.route('/getuserdetails/<id>/<status>', methods=['POST'])
+def getuserdetails(id, status):
+    body = request.data.decode('utf-8')
+    return parse_and_store_response(id, status, body, 'get_user_details_responses')
+
+@app.route('/setuserdetails/<id>/<status>', methods=['POST'])
+def setuserdetails(id, status):
+    body = request.data.decode('utf-8')
+    return parse_and_store_response(id, status, body, 'set_user_details_responses')
+
 @app.route('/sendmessage', methods=['POST'])
 def send_message():
     body = request.data.decode('utf-8')
@@ -59,7 +69,7 @@ def parse_and_store_response(id, status, body, storage_key):
     if len(id) != 12:
         return 500
 
-    if len(request.data) < 250:
+    if len(request.data) < 512:
         invalid_data_response = json.dumps({'status': 'Failed', 'message': 'An invalid response was received from the server'})
 
         try:
