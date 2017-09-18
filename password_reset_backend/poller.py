@@ -15,6 +15,7 @@ from twilio.rest import Client
 from Crypto import Random
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES, PKCS1_OAEP
+from ldap3 import Server, Connection, ALL
 
 
 class poller():
@@ -33,6 +34,7 @@ class poller():
         self.config = self.loadconfig('config.yml')
 
         self.domain_dn = self.config['directory']['dn']
+        self.domain_fqdn = self.config['directory']['fqdn']
         self.auth_service_validate_ticket_uri = '%s/amserver/sessionservice' % self.config['auth_service']['address']
 
         self.log.info('Configuration: %s' % self.config)
@@ -86,6 +88,13 @@ class poller():
                     if request_type == 'get_user_details':
                         try:
                             self.get_user_details(unwrapped_request)
+                        except Exception as ex:
+                            self.log.exception('Method=poll, Message=Failed get user details, RequestType=%s, ID=%s' % (request_type, id))
+                            break
+
+                    if request_type == 'set_user_details':
+                        try:
+                            self.set_user_details(unwrapped_request)
                         except Exception as ex:
                             self.log.exception('Method=poll, Message=Failed get user details, RequestType=%s, ID=%s' % (request_type, id))
                             break
@@ -169,21 +178,60 @@ class poller():
         except Exception as ex:
             self.log.exception('Method=send_sms, Message=Failed to send SMS, MobileNumber=%s, TwilioSID=%s, TwilioAuthcode=%s, FromText=%s, Body=%s' % (mobile_number, twilio_sid, twilio_authcode, from_text, body))
 
+    def set_user_details(self, reset_request):
+        id = reset_request['id']
+        requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'The function is not yet implemented'}))
+        return
+
     def get_user_details(self, reset_request):
         if 'id' in reset_request \
                 and 'request_content' in reset_request \
                 and 'username' in reset_request['request_content'] \
-                and 'evidence' in reset_request['request_content'] \
-                and 'password' in reset_request['request_content']:
+                and 'evidence' in reset_request['request_content']:
 
             id = reset_request['id']
             username = reset_request['request_content']['username']
-            password = reset_request['request_content']['password']
             evidence_raw = reset_request['request_content']['evidence']
 
             evidence = self.unwrap_request(evidence_raw)
 
-        return
+            password = evidence['password']
+
+            user = self.get_user(username)
+
+            if user == None:
+                self.log.warning('Method=get_user_details, Message=User account could not be found, Request=%s' % reset_request)
+                requests.post('%s/getuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'The specified user account could not be found'}))
+                return
+
+            server = Server(self.domain_fqdn, get_info=ALL, port=636, use_ssl=True)
+            conn = Connection(server, user=user['distinguishedName'], password=password)
+
+            if not conn.bind():
+                if conn.result['description'] == 'invalidCredentials':
+                    self.log.warning('Method=get_user_details, Message=Incorrect password supplied, Request=%s' % reset_request)
+                    requests.post('%s/getuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'The supplied password was incorrect'}))
+                else:
+                    self.log.warning('Method=get_user_details, Message=Other error occurred, Result=%s, Request=%s' % (conn.result, reset_request))
+                    requests.post('%s/getuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'An unspecified error occurred'}))
+                return
+
+            search_result = conn.search(conn.user, '(objectClass=user)', attributes=['pager', 'mobile'])
+
+            if search_result:
+                attributes = {'status': 'OK', 'dn': user['distinguishedName'], 'mobile': '', 'uid': ''}
+                if len(conn.entries[0].entry_attributes_as_dict['mobile']) == 1:
+                    attributes['mobile'] = conn.entries[0].entry_attributes_as_dict['mobile'][0]
+
+                if len(conn.entries[0].entry_attributes_as_dict['pager']) == 1:
+                    attributes['uid'] = conn.entries[0].entry_attributes_as_dict['pager'][0]
+
+                self.log.info('Method=get_user_details, Message=Retrieved and returning attributes, Attributes=%s, Request=%s' % (attributes, reset_request))
+                requests.post('%s/getuserdetails/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps(attributes))
+                conn.unbind()
+        else:
+            self.log.error('Method=get_user_details, Message=Called with incomplete set of fields, Request=%s' % reset_request)
+            return
 
     def reset_password(self, reset_request):
         if 'id' in reset_request \
@@ -311,7 +359,7 @@ class poller():
 
         try:
             self.log.info('Method=get_user, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
-            users = q.search(username, self.domain_dn,)
+            users = q.search(username, self.domain_dn)
         except Exception as ex:
             self.log.exception('Method=get_user, Message=Error searching for user, Username=%s' % username)
 
