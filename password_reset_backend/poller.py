@@ -242,7 +242,7 @@ class poller():
         request_body = self.session_service_template.replace('{{ ticket }}', ticket)
 
         try:
-            response = requests.post(self.auth_service_validate_ticket_uri, data=request_body)
+            response = requests.post(self.auth_service_validate_ticket_uri, data=request_body, verify=False)
         except Exception as ex:
             self.log.exception(ex)
             self.log.error('Failed to request authvalidate')

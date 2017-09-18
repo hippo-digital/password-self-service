@@ -7,7 +7,8 @@
     address: http://10.211.55.2:5002
 
   auth_service:
-    address: http://10.211.55.2:5000
+    address: https://gas.nis1.national.ncrs.nhs.uk
+    #http://10.211.55.2:5000
 
 #  directory:
 #    dn: OU=Departments,DC=xRothGen,DC=nhs,DC=uk
