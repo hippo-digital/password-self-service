@@ -49,35 +49,38 @@ class poller():
                 result_raw = req.content.decode('utf-8')
                 reqs = json.loads(result_raw)
         except Exception as ex:
-            self.log.info('Failed to retrieve requests: %s' % ex)
+            self.log.exception('Method=poll, Message=Failed to retrieve requests', ex)
 
 
         for req in reqs:
             try:
                 unwrapped_request = self.unwrap_request(req)
             except Exception as ex:
-                self.log.error('Failed to unwrap request %s with error %s' % (req, ex))
+                self.log.exception('Method=poll, Message=Failed to unwrap request, Request=%s' % req, ex)
 
             if type(unwrapped_request) is dict:
-                if 'type' in unwrapped_request and 'id' in unwrapped_request and 'request_content' in unwrapped_request:
+                if 'type' in unwrapped_request and 'id' in unwapped_request and 'request_content' in unwrapped_request:
                     id = unwrapped_request['id']
                     content = unwrapped_request['request_content']
                     request_type = unwrapped_request['type']
 
-                    self.log.info('Request Type: %s,  ID: %s' % (request_type, id))
+                    self.log.info('Method=poll, Message=Request received, RequestType=%s, ID=%s' % (request_type, id))
 
                     if request_type == 'code':
                         if 'username' in content:
                             username = content['username']
 
-                            self.send_code(username=username, id=id)
+                            try:
+                                self.send_code(username=username, id=id)
+                            except Exception as ex:
+                                self.log.exception('Method=poll, Message=Failed send code, Username=%s, RequestType=%s, ID=%s' % (username, request_type, id), ex)
+                                break
 
                     if request_type == 'reset':
                         try:
                             self.reset_password(unwrapped_request)
                         except Exception as ex:
-                            self.log.error('Method=poll, Message=Failed reset password, Input=%s, Exception=%s',
-                                           (unwrapped_request, ex))
+                            self.log.exception('Method=poll, Message=Failed reset password, RequestType=%s, ID=%s' % (request_type, id), ex)
                             break
 
     def unwrap_request(self, message):
@@ -101,16 +104,16 @@ class poller():
         return s[:-ord(s[len(s)-1:])]
 
     def send_code(self, username, id):
-        self.log.info('Method=send_code, Username=%s, ID=%s' % (username, id))
+        self.log.info('Method=send_code, Message=Processing send_code request, Username=%s, ID=%s' % (username, id))
 
         q = search_object.search_object()
         users = None
 
         try:
-            self.log.info('Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
+            self.log.info('Method=send_code, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
             users = q.search(username, self.domain_dn)
         except Exception as ex:
-            self.log.error('Method=send_code, Message=Error searching for user,username=%s' % username, ex)
+            self.log.error('Method=send_code, Message=Error searching for user, Username=%s' % username, ex)
             self.log.exception(ex)
 
         if len(users) == 0:
@@ -129,18 +132,18 @@ class poller():
             try:
                 self.send_sms(mobile_number, code)
             except Exception as ex:
-                self.log.error('Method=send_code, Message=Error sending code, username=%s, Code=%s' % (username, code), ex)
+                self.log.error('Method=send_code, Message=Error sending code, Username=%s, Code=%s' % (username, code), ex)
 
             try:
                 code_hash = self.generate_code_hash(username, raw_code, id)
                 requests.post('%s/coderesponse/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'OK', 'code_hash': code_hash}))
             except Exception as ex:
-                self.log.error('Method=send_code, Message=Error setting status on frontend, username=%s, Code=%s' % (username, code), ex)
+                self.log.error('Method=send_code, Message=Error setting status on frontend, Username=%s, Code=%s' % (username, code), ex)
         else:
-            self.log.error('Method=send_code, Message=Too many objects returned, Data=%s' % users)
+            self.log.error('Method=send_code, Message=Too many user objects returned on search, UserObjects=%s' % users)
 
     def send_sms(self, mobile_number, code):
-        self.log.info('Method=send_sms, Message=Setting up API')
+        self.log.info('Method=send_sms, Message=Setting up API for send, MobileNumber=%s, Code=%s' % (mobile_number, code))
 
         twilio_sid = self.config['sms']['twilio_sid']
         twilio_authcode = self.config['sms']['twilio_authcode']
@@ -155,10 +158,9 @@ class poller():
                 from_ = from_text,
                 body = body
             )
-            self.log.info('Method=send_sms, Message=Successfully sent SMS, mobile_number=%s' % mobile_number)
+            self.log.info('Method=send_sms, Message=Successfully sent SMS, MobileNumber=%s' % mobile_number)
         except Exception as ex:
-            self.log.error('Method=send_sms, Message=Failed to send SMS, mobile_number=%s, twilio_sid=%s, twilio_authcode=%s, from_text=%s, body=%s' % (mobile_number, twilio_sid, twilio_authcode, from_text, body))
-            # raise(ex)
+            self.log.exception('Method=send_sms, Message=Failed to send SMS, MobileNumber=%s, TwilioSID=%s, TwilioAuthcode=%s, FromText=%s, Body=%s' % (mobile_number, twilio_sid, twilio_authcode, from_text, body), ex)
 
     def reset_password(self, reset_request):
         if 'id' in reset_request \
@@ -225,7 +227,7 @@ class poller():
                 raise(Exception())
 
     def check_code(self, id, username, code, code_hash):
-        self.log.info('Method=reset_request, Username=%s, Code=%s, CodeHash=%s, ID=%s' % (
+        self.log.info('Method=check_code, Message=Checking Reset Code, Username=%s, Code=%s, CodeHash=%s, ID=%s' % (
             username,
             code,
             code_hash,
@@ -244,12 +246,11 @@ class poller():
         try:
             response = requests.post(self.auth_service_validate_ticket_uri, data=request_body, verify=False)
         except Exception as ex:
-            self.log.exception(ex)
-            self.log.error('Failed to request authvalidate')
+            self.log.exception('Method=verify_ticket, Message=Failed to request authvalidate, Request=%s' % request_body, ex)
             return False
 
         response_body = response.content.decode('utf-8')
-        self.log.info('Message=Response received from Spine, Response=%s' % response_body)
+        #self.log.info('Method=verify_ticket, Message=Response received from Spine, Response=%s' % response_body)
 
         user_details = self.get_user(username)
         registered_uuid = user_details['pager']
