@@ -49,17 +49,17 @@ class poller():
                 result_raw = req.content.decode('utf-8')
                 reqs = json.loads(result_raw)
         except Exception as ex:
-            self.log.exception('Method=poll, Message=Failed to retrieve requests', ex)
+            self.log.exception('Method=poll, Message=Failed to retrieve requests')
 
 
         for req in reqs:
             try:
                 unwrapped_request = self.unwrap_request(req)
             except Exception as ex:
-                self.log.exception('Method=poll, Message=Failed to unwrap request, Request=%s' % req, ex)
+                self.log.exception('Method=poll, Message=Failed to unwrap request, Request=%s' % req)
 
             if type(unwrapped_request) is dict:
-                if 'type' in unwrapped_request and 'id' in unwapped_request and 'request_content' in unwrapped_request:
+                if 'type' in unwrapped_request and 'id' in unwrapped_request and 'request_content' in unwrapped_request:
                     id = unwrapped_request['id']
                     content = unwrapped_request['request_content']
                     request_type = unwrapped_request['type']
@@ -73,14 +73,21 @@ class poller():
                             try:
                                 self.send_code(username=username, id=id)
                             except Exception as ex:
-                                self.log.exception('Method=poll, Message=Failed send code, Username=%s, RequestType=%s, ID=%s' % (username, request_type, id), ex)
+                                self.log.exception('Method=poll, Message=Failed send code, Username=%s, RequestType=%s, ID=%s' % (username, request_type, id))
                                 break
 
                     if request_type == 'reset':
                         try:
                             self.reset_password(unwrapped_request)
                         except Exception as ex:
-                            self.log.exception('Method=poll, Message=Failed reset password, RequestType=%s, ID=%s' % (request_type, id), ex)
+                            self.log.exception('Method=poll, Message=Failed reset password, RequestType=%s, ID=%s' % (request_type, id))
+                            break
+
+                    if request_type == 'get_user_details':
+                        try:
+                            self.get_user_details(unwrapped_request)
+                        except Exception as ex:
+                            self.log.exception('Method=poll, Message=Failed get user details, RequestType=%s, ID=%s' % (request_type, id))
                             break
 
     def unwrap_request(self, message):
@@ -113,7 +120,7 @@ class poller():
             self.log.info('Method=send_code, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
             users = q.search(username, self.domain_dn)
         except Exception as ex:
-            self.log.error('Method=send_code, Message=Error searching for user, Username=%s' % username, ex)
+            self.log.error('Method=send_code, Message=Error searching for user, Username=%s' % username)
             self.log.exception(ex)
 
         if len(users) == 0:
@@ -132,13 +139,13 @@ class poller():
             try:
                 self.send_sms(mobile_number, code)
             except Exception as ex:
-                self.log.error('Method=send_code, Message=Error sending code, Username=%s, Code=%s' % (username, code), ex)
+                self.log.error('Method=send_code, Message=Error sending code, Username=%s, Code=%s' % (username, code))
 
             try:
                 code_hash = self.generate_code_hash(username, raw_code, id)
                 requests.post('%s/coderesponse/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'OK', 'code_hash': code_hash}))
             except Exception as ex:
-                self.log.error('Method=send_code, Message=Error setting status on frontend, Username=%s, Code=%s' % (username, code), ex)
+                self.log.exception('Method=send_code, Message=Error setting status on frontend, Username=%s, Code=%s' % (username, code))
         else:
             self.log.error('Method=send_code, Message=Too many user objects returned on search, UserObjects=%s' % users)
 
@@ -160,7 +167,23 @@ class poller():
             )
             self.log.info('Method=send_sms, Message=Successfully sent SMS, MobileNumber=%s' % mobile_number)
         except Exception as ex:
-            self.log.exception('Method=send_sms, Message=Failed to send SMS, MobileNumber=%s, TwilioSID=%s, TwilioAuthcode=%s, FromText=%s, Body=%s' % (mobile_number, twilio_sid, twilio_authcode, from_text, body), ex)
+            self.log.exception('Method=send_sms, Message=Failed to send SMS, MobileNumber=%s, TwilioSID=%s, TwilioAuthcode=%s, FromText=%s, Body=%s' % (mobile_number, twilio_sid, twilio_authcode, from_text, body))
+
+    def get_user_details(self, reset_request):
+        if 'id' in reset_request \
+                and 'request_content' in reset_request \
+                and 'username' in reset_request['request_content'] \
+                and 'evidence' in reset_request['request_content'] \
+                and 'password' in reset_request['request_content']:
+
+            id = reset_request['id']
+            username = reset_request['request_content']['username']
+            password = reset_request['request_content']['password']
+            evidence_raw = reset_request['request_content']['evidence']
+
+            evidence = self.unwrap_request(evidence_raw)
+
+        return
 
     def reset_password(self, reset_request):
         if 'id' in reset_request \
@@ -191,7 +214,20 @@ class poller():
 
                 ticket = evidence['ticket']
 
-                verified = self.verify_ticket(username, ticket)
+                try:
+                    verified = self.verify_ticket(username, ticket)
+                except UserDoesNotExistException as ex:
+                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                  data=json.dumps(
+                                      {'status': 'Failed',
+                                       'message': 'The user does not exist in the directory'}))
+                    return
+                except CannotConnectToSpineAuthenticationException as ex:
+                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                  data=json.dumps(
+                                      {'status': 'Failed',
+                                       'message': 'Failed to connect to Spine authentication service'}))
+                    return
 
                 if not verified:
                     requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
@@ -246,12 +282,16 @@ class poller():
         try:
             response = requests.post(self.auth_service_validate_ticket_uri, data=request_body, verify=False)
         except Exception as ex:
-            self.log.exception('Method=verify_ticket, Message=Failed to request authvalidate, Request=%s' % request_body, ex)
-            return False
+            self.log.exception('Method=verify_ticket, Message=Failed to request authvalidate, Request=%s' % request_body)
+            raise CannotConnectToSpineAuthenticationException()
 
         response_body = response.content.decode('utf-8')
 
         user_details = self.get_user(username)
+        if user_details == None:
+            self.log.warning('Method=verify_ticket, Message=Username not found in directory, Username=%s' % username)
+            raise UserDoesNotExistException()
+
         registered_uuid = user_details['pager']
 
         ticket_validated = '<Property name="SessionHandle" value="shandle:%s"></Property>' % ticket in response_body
@@ -273,10 +313,12 @@ class poller():
             self.log.info('Method=get_user, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
             users = q.search(username, self.domain_dn,)
         except Exception as ex:
-            self.log.exception('Method=get_user, Message=Error searching for user, Username=%s' % username, ex)
+            self.log.exception('Method=get_user, Message=Error searching for user, Username=%s' % username)
 
         if len(users) == 1:
             return users[0]
+
+        return None
 
     def reset_ad_password(self, username, new_password):
         self.log.info('Method=reset_ad_password, Message=Resetting password, Username=%s' % username)
@@ -287,7 +329,7 @@ class poller():
         try:
             q = search_object.search_object()
         except Exception as ex:
-            self.log.error('Failed search for user in AD', ex)
+            self.log.exception('Method=reset_ad_password, Message=Failed search for user in AD')
 
         try:
             users = q.search(username, self.domain_dn)
@@ -297,7 +339,7 @@ class poller():
             else:
                 raise(ex)
         except Exception as ex:
-            self.log.exception('Method=reset_ad_password, Message=Failed search for user in AD, Username=%s' % username, ex)
+            self.log.exception('Method=reset_ad_password, Message=Failed search for user in AD, Username=%s' % username)
 
         if len(users) != 1:
             self.log.error('Method=reset_ad_password, Message=Could not find specified user in AD, Users=%s' % users)
@@ -316,7 +358,7 @@ class poller():
             else:
                 raise(ex)
         except Exception as ex:
-            self.log.exception('Method=reset_ad_password, Message=Failed to set password in AD, Username=%s', ex)
+            self.log.exception('Method=reset_ad_password, Message=Failed to set password in AD, Username=%s')
             raise(ex)
 
     def loadconfig(self, config_file_path):
@@ -341,6 +383,9 @@ class CannotConnectToDirectoryException(Exception):
     None
 
 class AccessIsDeniedException(Exception):
+    None
+
+class CannotConnectToSpineAuthenticationException(Exception):
     None
 
 
