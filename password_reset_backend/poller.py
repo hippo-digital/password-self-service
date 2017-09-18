@@ -15,7 +15,7 @@ from twilio.rest import Client
 from Crypto import Random
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES, PKCS1_OAEP
-from ldap3 import Server, Connection, ALL
+from ldap3 import Server, Connection, ALL, MODIFY_REPLACE
 
 
 class poller():
@@ -179,9 +179,52 @@ class poller():
             self.log.exception('Method=send_sms, Message=Failed to send SMS, MobileNumber=%s, TwilioSID=%s, TwilioAuthcode=%s, FromText=%s, Body=%s' % (mobile_number, twilio_sid, twilio_authcode, from_text, body))
 
     def set_user_details(self, reset_request):
-        id = reset_request['id']
-        requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'The function is not yet implemented'}))
-        return
+        if 'id' in reset_request \
+                and 'request_content' in reset_request \
+                and 'dn' in reset_request['request_content'] \
+                and 'username' in reset_request['request_content'] \
+                and 'mobile' in reset_request['request_content'] \
+                and 'uid' in reset_request['request_content'] \
+                and 'evidence' in reset_request['request_content']:
+            id = reset_request['id']
+            dn = reset_request['request_content']['dn']
+            username = reset_request['request_content']['username']
+            mobile = reset_request['request_content']['mobile']
+            uid = reset_request['request_content']['uid']
+            evidence_raw = reset_request['request_content']['evidence']
+
+            evidence = self.unwrap_request(evidence_raw)
+            password = evidence['password']
+
+            server = Server(self.domain_fqdn, get_info=ALL, port=636, use_ssl=True)
+            conn = Connection(server, user=dn, password=password)
+
+            if not conn.bind():
+                if conn.result['description'] == 'invalidCredentials':
+                    self.log.warning('Method=set_user_details, Message=Incorrect password supplied, Request=%s' % reset_request)
+                    requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'The supplied password was incorrect'}))
+                else:
+                    self.log.warning('Method=set_user_details, Message=Other error occurred, Result=%s, Request=%s' % (conn.result, reset_request))
+                    requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'An unspecified error occurred'}))
+                return
+
+            conn.modify(dn,
+                     {'mobile': [(MODIFY_REPLACE, [mobile])],
+                      'pager': [(MODIFY_REPLACE, [uid])]})
+
+            if conn.result['description'] == 'success':
+                self.log.info('Method=set_user_details, Message=Successfully set attributes, Attributes=%s, Request=%s' % ({'mobile': mobile, 'pager': uid}, reset_request))
+                requests.post('%s/setuserdetails/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'OK'}))
+            else:
+                self.log.warning('Method=set_user_details, Message=Other error occurred, Result=%s, Request=%s' % (conn.result, reset_request))
+                requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id),
+                              data=json.dumps({'status': 'Failed', 'message': 'An unspecified error occurred'}))
+
+            conn.unbind()
+            return
+        else:
+            self.log.error('Method=set_user_details, Message=Called with incomplete set of fields, Request=%s' % reset_request)
+            return
 
     def get_user_details(self, reset_request):
         if 'id' in reset_request \
