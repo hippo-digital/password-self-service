@@ -250,13 +250,18 @@ class poller():
             return False
 
         response_body = response.content.decode('utf-8')
-        #self.log.info('Method=verify_ticket, Message=Response received from Spine, Response=%s' % response_body)
 
         user_details = self.get_user(username)
         registered_uuid = user_details['pager']
 
         ticket_validated = '<Property name="SessionHandle" value="shandle:%s"></Property>' % ticket in response_body
         username_validated = '<Property name="UserId" value="%s">' % registered_uuid in response_body
+
+        if not ticket_validated:
+            self.log.warning('Method=verify_ticket, Message=Ticket not validated for user, Username=%s, SpineResponse=%s' % (username, response_body))
+
+        if not username_validated:
+            self.log.warning('Method=verify_ticket, Message=Username not validated for user, Username=%s, RegisteredUID=%s, SpineResponse=%s' % (username, registered_uuid, response_body))
 
         return ticket_validated and username_validated
 
@@ -265,17 +270,16 @@ class poller():
         users = None
 
         try:
-            self.log.info('Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
+            self.log.info('Method=get_user, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
             users = q.search(username, self.domain_dn,)
         except Exception as ex:
-            self.log.error('Method=send_code, Message=Error searching for user,username=%s' % username, ex)
-            self.log.exception(ex)
+            self.log.exception('Method=get_user, Message=Error searching for user, Username=%s' % username, ex)
 
         if len(users) == 1:
             return users[0]
 
     def reset_ad_password(self, username, new_password):
-        self.log.info('Method=reset_ad_password, Username=%s' % username)
+        self.log.info('Method=reset_ad_password, Message=Resetting password, Username=%s' % username)
         from pyad import pyadexceptions
 
         import pywintypes
@@ -293,10 +297,10 @@ class poller():
             else:
                 raise(ex)
         except Exception as ex:
-            self.log.error('Failed search for user in AD', ex)
+            self.log.exception('Method=reset_ad_password, Message=Failed search for user in AD, Username=%s' % username, ex)
 
         if len(users) != 1:
-            self.log.error('Could not find specified user in AD')
+            self.log.error('Method=reset_ad_password, Message=Could not find specified user in AD, Users=%s' % users)
             raise(UserDoesNotExistException)
 
         user = users[0]
@@ -312,7 +316,7 @@ class poller():
             else:
                 raise(ex)
         except Exception as ex:
-            self.log.error('Failed to set password in AD', ex)
+            self.log.exception('Method=reset_ad_password, Message=Failed to set password in AD, Username=%s', ex)
             raise(ex)
 
     def loadconfig(self, config_file_path):
