@@ -249,13 +249,19 @@ class poller():
             return False
 
         response_body = response.content.decode('utf-8')
-        self.log.info('Message=Response received from Spine, Response=%s' % response_body)
+        # self.log.info('Message=Response received from Spine, Response=%s' % response_body)
 
         user_details = self.get_user(username)
         registered_uuid = user_details['pager']
 
         ticket_validated = '<Property name="SessionHandle" value="shandle:%s"></Property>' % ticket in response_body
         username_validated = '<Property name="UserId" value="%s">' % registered_uuid in response_body
+
+        if not ticket_validated:
+            self.log.warning('Message=Ticket not validated for use, Username=%s, SpineResponse=%s' % (username, response_body))
+
+        if not username_validated:
+            self.log.warning('Message=Username not validated for use, Username=%s, RegisteredUID=%s, SpineResponse=%s' % (username, registered_uuid, response_body))
 
         return ticket_validated and username_validated
 
