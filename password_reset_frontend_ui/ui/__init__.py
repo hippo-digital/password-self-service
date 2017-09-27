@@ -16,8 +16,6 @@ import yaml
 
 app = Flask(__name__)
 
-#app.add_url_rule('/favicon.ico', redirect_to=url_for('static', filename='favicon.ico'))
-
 
 @app.before_request
 def log_request():
