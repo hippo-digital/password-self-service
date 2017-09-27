@@ -119,3 +119,10 @@ class tests(unittest.TestCase):
         self.assertIn('The user does not exist in the directory', reset_response, 'Expected failure response from reset call not received.')
 
 
+    def test_get_platform(self):
+        import sys
+        x = sys.platform
+
+        None
+
+
