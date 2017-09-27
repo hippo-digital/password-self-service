@@ -146,7 +146,8 @@ def code():
     id = request.form['id']
 
     if 'code' in request.form and 'code_hash' in request.form:
-        evidence = package_and_encrypt({'code': request.form['code'], 'code_hash': request.form['code_hash']})
+        cleaned_code = request.form['code'].replace(' ', '').strip().upper()
+        evidence = package_and_encrypt({'code': cleaned_code, 'code_hash': request.form['code_hash']})
         return redirect('/password/%s' % evidence, 307)
     else:
         store_request(id, 'code', {'username': username})
