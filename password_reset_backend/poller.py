@@ -360,7 +360,9 @@ class poller():
             code_hash,
             id))
 
-        expected_hash = self.generate_code_hash(username, code, id)
+        cleaned_code = code.replace(' ', '').strip().upper()
+
+        expected_hash = self.generate_code_hash(username, cleaned_code, id)
 
         if expected_hash == code_hash:
             return True
