@@ -217,6 +217,21 @@ class tests(unittest.TestCase):
         self.assertNotIn('<input name="code"', body)
         self.assertIn('A problem occurred that requires further investigation', body)
 
+    def test__code__whenCodeIsSuppliedWithSpaceAndLowercaseLetters__removesSpacesAndConvertsLettersToUppercase(self):
+        self.clear_requests()
+
+        form = {'id': 'n0deiuw3s32',
+                'username': 'test',
+                'code_hash': 'BejwKVfTTGEdxkQEEOTEZpxnMyMMStsbeIC9iG3J2DABudyYQJnZdRlDzAPJWg3BQtNeeqKjN3K46QRmMthzRA==',
+                'code': 'aa 123 456'}
+
+        response = self.app.post('/code', data=form)
+        evidence_base64 = response.location[response.location.rfind('/') + 1:]
+        evidence = self.unwrap_request(evidence_base64)
+
+        self.assertNotEqual(form['code'], evidence['code'])
+        self.assertEqual('AA123456', evidence['code'])
+
     def test__reset__whenCodeAndPasswordIsSupplied__storesRequestForReset(self):
         self.clear_requests()
         #ui.public_key = self.test_private_key

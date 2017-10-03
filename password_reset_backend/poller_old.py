@@ -115,7 +115,9 @@ class poller():
 
         return unwrapped
 
-
+    @staticmethod
+    def _unpad(s):
+        return s[:-ord(s[len(s)-1:])]
 
     def send_code(self, username, id):
         self.log.info('Method=send_code, Message=Processing send_code request, Username=%s, ID=%s' % (username, id))
