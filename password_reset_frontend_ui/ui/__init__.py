@@ -22,7 +22,7 @@ def log_request():
     transaction_id = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(6)])
     request.environ['transaction_id'] = transaction_id
 
-    log.info('Method=BeforeRequest Transaction=%s RequestMethod=%s URL=%s ClientIP=%s Method=%s Proto=%s UserAgent=%s Arguments=%s Form=%s Data=%s'
+    log.info('Method=BeforeRequest Transaction=%s RequestMethod=%s URL=%s ClientIP=%s Method=%s Proto=%s UserAgent=%s Arguments=%s Data=%s'
              % (transaction_id,
                 request.method,
                 request.url,
