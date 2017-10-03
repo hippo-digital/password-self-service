@@ -31,7 +31,6 @@ def log_request():
                 request.headers.environ['SERVER_PROTOCOL'],
                 request.headers.environ['HTTP_USER_AGENT'] if 'HTTP_USER_AGENT' in request.headers.environ else 'NULL',
                 request.args,
-                request.form,
                 request.data.decode('utf-8')))
 
 
