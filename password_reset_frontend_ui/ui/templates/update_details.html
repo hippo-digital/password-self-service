@@ -67,7 +67,7 @@
         mobile_numeric_element = mobile.substring(1);
 
         if (mobile.length == 13
-                && mobile.startsWith('+447')
+                && mobile.substring(0, 4) == '+447'
                 && !isNaN(parseFloat(mobile_numeric_element)) && isFinite(mobile_numeric_element)) {
             markControl(control, 'green');
             showHideAdvice(advice, false);

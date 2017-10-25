@@ -13,7 +13,6 @@ from Crypto.PublicKey import RSA
 import base64
 import yaml
 
-
 app = Flask(__name__)
 
 
@@ -22,7 +21,7 @@ def log_request():
     transaction_id = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(6)])
     request.environ['transaction_id'] = transaction_id
 
-    log.info('Method=BeforeRequest Transaction=%s RequestMethod=%s URL=%s ClientIP=%s Method=%s Proto=%s UserAgent=%s Arguments=%s Data=%s'
+    log.info('Method=BeforeRequest Transaction=%s RequestMethod=%s URL=%s ClientIP=%s WebMethod=%s Proto=%s UserAgent=%s Arguments=%s Data=%s'
              % (transaction_id,
                 request.method,
                 request.url,
@@ -32,7 +31,6 @@ def log_request():
                 request.headers.environ['HTTP_USER_AGENT'] if 'HTTP_USER_AGENT' in request.headers.environ else 'NULL',
                 request.args,
                 request.data.decode('utf-8')))
-
 
 @app.route('/')
 @app.route('/start')
@@ -102,7 +100,6 @@ def register():
         else:
             return fields_render('failed', fields={'message': 'No response from server, please contact a system administrator'})
 
-
 @app.route('/reset_method', methods=['POST'])
 def reset_method():
     username = request.form['username']
@@ -137,7 +134,6 @@ def spineauth():
         return fields_render('spineauth', {'id': id, 'username': username})
     else:
         return 500
-
 
 @app.route('/code', methods=['POST'])
 def code():
