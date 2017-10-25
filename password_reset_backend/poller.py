@@ -349,7 +349,9 @@ class poller():
                 except AccessIsDeniedException:
                     requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps(
                         {'status': 'Failed', 'message': 'The account could not be reset due to a permissions issue'}))
-
+                except Exception:
+                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps(
+                        {'status': 'Failed', 'message': 'The account could not be reset due to an undetermined issue'}))
             else:
                 raise(Exception())
 
