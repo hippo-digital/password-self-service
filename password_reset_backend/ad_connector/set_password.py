@@ -5,4 +5,5 @@ class set_password:
         import pyad
         user = pyad.aduser.ADUser.from_dn(account_dn, options={'ldap_server':server})
         user.set_password(password)
+        user.update_attribute('lockoutTime', 0)
 
