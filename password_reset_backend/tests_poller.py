@@ -148,102 +148,19 @@ class tests_poller(unittest.TestCase):
                         self.assertIn('status', post_body)
                         self.assertIn('code_hash', post_body)
 
-    # def test__get_user_details__whenCalledWithValidPasswordAndTestAccountThatHasPopulatedData__callsFrontEndWithValidDetails(self):
-    #     p = poller.poller()
-    #
-    #     with mock.patch('requests.post') as frontend_post_request:
-    #         with mock.patch('poller.poller.unwrap_request', return_value={'password': 'D0NotCh@nge'}):
-    #             request = {'id': '123',
-    #                        'request_content': {
-    #                            'username': 'test_user_2',
-    #                            'evidence': ''}}
-    #
-    #             ud = p.get_user_details(request)
-    #
-    #             frontend_post_request.assert_called()
-    #
-    #             called_path = frontend_post_request.call_args[0][0]
-    #             self.assertIn('/getuserdetails/123/OK', called_path)
-    #
-    #             called_body = frontend_post_request.call_args[1]['data']
-    #             called_args = json.loads(called_body)
-    #             self.assertIn('uid', called_args)
-    #             self.assertIn('mobile', called_args)
-    #             self.assertEqual('expected_uuid', called_args['uid'])
-    #             self.assertEqual('expected_mobile', called_args['mobile'])
-    #
-    # def test__get_user_details__whenCalledWithValidPasswordAndTestAccountThatHasNoPopulatedData__callsFrontEndWithEmptyDetails(self):
-    #     p = poller.poller()
-    #
-    #     with mock.patch('requests.post') as frontend_post_request:
-    #         with mock.patch('poller.poller.unwrap_request', return_value={'password': 'D0NotCh@nge'}):
-    #             request = {'id': '123',
-    #                        'request_content': {
-    #                            'username': 'test_user_3',
-    #                            'evidence': ''}}
-    #
-    #             ud = p.get_user_details(request)
-    #
-    #             frontend_post_request.assert_called()
-    #
-    #             called_path = frontend_post_request.call_args[0][0]
-    #             self.assertIn('/getuserdetails/123/OK', called_path)
-    #
-    #             called_body = frontend_post_request.call_args[1]['data']
-    #             called_args = json.loads(called_body)
-    #             self.assertIn('uid', called_args)
-    #             self.assertIn('mobile', called_args)
-    #             self.assertEqual('', called_args['uid'])
-    #             self.assertEqual('', called_args['mobile'])
-    #
-    # def test__get_user_details__whenCalledWithUserThatDoesNotExist__callsFrontEndWithUserNotFoundError(self):
-    #     p = poller.poller()
-    #
-    #     with mock.patch('requests.post') as frontend_post_request:
-    #         with mock.patch('poller.poller.unwrap_request', return_value={'password': 'D0NotCh@nge'}):
-    #             request = {'id': '123',
-    #                        'request_content': {
-    #                            'username': 'non-existent-user',
-    #                            'evidence': ''}}
-    #
-    #             ud = p.get_user_details(request)
-    #
-    #             frontend_post_request.assert_called()
-    #
-    #             called_path = frontend_post_request.call_args[0][0]
-    #             self.assertIn('/getuserdetails/123/Failed', called_path)
-    #
-    #             called_body = frontend_post_request.call_args[1]['data']
-    #             called_args = json.loads(called_body)
-    #             self.assertIn('status', called_args)
-    #             self.assertIn('message', called_args)
-    #             self.assertEqual('Failed', called_args['status'])
-    #             self.assertEqual('The specified user account could not be found', called_args['message'])
-    #
-    # def test__get_user_details__whenCalledWithValidUserAndInvalidPassword__callsFrontEndWithInvalidPasswordError(self):
-    #     p = poller.poller()
-    #
-    #     with mock.patch('requests.post') as frontend_post_request:
-    #         with mock.patch('poller.poller.unwrap_request', return_value={'password': 'incorrectP@ssw0rd'}):
-    #             request = {'id': '123',
-    #                        'request_content': {
-    #                            'username': 'test_user_3',
-    #                            'evidence': ''}}
-    #
-    #             ud = p.get_user_details(request)
-    #
-    #             frontend_post_request.assert_called()
-    #
-    #             called_path = frontend_post_request.call_args[0][0]
-    #             self.assertIn('/getuserdetails/123/Failed', called_path)
-    #
-    #             called_body = frontend_post_request.call_args[1]['data']
-    #             called_args = json.loads(called_body)
-    #             self.assertIn('status', called_args)
-    #             self.assertIn('message', called_args)
-    #             self.assertEqual('Failed', called_args['status'])
-    #             self.assertEqual('The supplied password was incorrect', called_args['message'])
+    def test__get_user_details__whenCalledWithMockedLDAPSearchWithNoDetailsRegistered__postsResponseWithBlankFields(self):
+        mocked_ldap = user_obj()
+        mocked_ldap.entry_attributes_as_dict['pager'] = []
 
+        test_request = {'id': '0', 'request_content': {'username': 'test_user', 'evidence': 'mocked_out'}}
+
+        p = poller.poller()
+
+        with mock.patch('poller.poller.unwrap_request', return_value={'password': '123'}) as mocked_evidence:
+            with mock.patch('ldap3.Connection.bind', return_value=True):
+                with mock.patch('ldap3.Connection.search', autospec=True, entries=[user_obj()], bound=True,
+                                return_value=wibble()) as ldap_conn:
+                    p.get_user_details(test_request)
 
 
 class user_obj:
@@ -253,4 +170,4 @@ class user_obj:
 
 class wibble:
     def search(self, a, b):
-        return [{'sn': 'Smith', 'givenName': 'Sandra', 'mail': 'sandra.smith@example.org', 'mobile': '123456'}]
+        return [{'sn': 'Smith', 'givenName': 'Sandra', 'mail': 'sandra.smith@example.org', 'mobile': '123456', 'distinguishedName': ['CN=Sandra.Smith,OU=Users,DC=example,DC=com']}]

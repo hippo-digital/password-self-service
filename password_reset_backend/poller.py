@@ -9,6 +9,7 @@ import logging
 import hashlib
 import base64
 import sys
+import re
 
 from ad_connector import search_object, set_password
 from twilio.rest import Client
@@ -208,9 +209,18 @@ class poller():
                     requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'An unspecified error occurred'}))
                 return
 
-            conn.modify(dn,
-                     {'mobile': [(MODIFY_REPLACE, [mobile])],
-                      'pager': [(MODIFY_REPLACE, [uid])]})
+            if len(uid) != 0 and (len(uid) != 12 or not uid.isnumeric()):
+                self.log.warning('Method=set_user_details, Message=UID field was invalid, Request=%s' % reset_request)
+                requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'The UID field was invalid'}))
+
+            if len(mobile) != 0 and (len(mobile) != 13 or not mobile.startswith('+447') or not mobile[1:].isnumeric()):
+                self.log.warning('Method=set_user_details, Message=Mobile number field was invalid, Request=%s' % reset_request)
+                requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id),
+                              data=json.dumps({'status': 'Failed', 'message': 'The mobile number field was invalid'}))
+
+            pager_field = 'pwd:%s:%s' % (uid, mobile)
+
+            conn.modify(dn, {'pager': [(MODIFY_REPLACE, [pager_field])]})
 
             if conn.result['description'] == 'success':
                 self.log.info('Method=set_user_details, Message=Successfully set attributes, Attributes=%s, Request=%s' % ({'mobile': mobile, 'pager': uid}, reset_request))
@@ -263,11 +273,19 @@ class poller():
 
             if search_result:
                 attributes = {'status': 'OK', 'dn': user['distinguishedName'], 'mobile': '', 'uid': ''}
-                if len(conn.entries[0].entry_attributes_as_dict['mobile']) == 1:
-                    attributes['mobile'] = conn.entries[0].entry_attributes_as_dict['mobile'][0]
-
                 if len(conn.entries[0].entry_attributes_as_dict['pager']) == 1:
-                    attributes['uid'] = conn.entries[0].entry_attributes_as_dict['pager'][0]
+                    pager_field = conn.entries[0].entry_attributes_as_dict['pager'][0]
+
+                    extracted = re.search('(^pwd:([0-9]{12}|):(\+447[0-9]{9}|)$)', pager_field)
+
+                    if extracted != None and len(extracted.groups()) == 3:
+                        attributes['uid'] = extracted.group(2)
+                        attributes['mobile'] = extracted.group(3)
+                    elif len(pager_field) == 12 and pager_field.isnumeric():
+                        attributes['uid'] = pager_field
+
+                if attributes['mobile'] == '' and len(conn.entries[0].entry_attributes_as_dict['mobile']) == 1:
+                    attributes['mobile'] = conn.entries[0].entry_attributes_as_dict['mobile'][0]
 
                 self.log.info('Method=get_user_details, Message=Retrieved and returning attributes, Attributes=%s, Request=%s' % (attributes, reset_request))
                 requests.post('%s/getuserdetails/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps(attributes))
