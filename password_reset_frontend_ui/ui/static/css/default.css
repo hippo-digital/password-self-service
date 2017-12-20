@@ -1,5 +1,7 @@
+
 body {
 	margin: 0px;
+	height: 100px;
 	font-family: 'Ubuntu', sans-serif;
 }
 
@@ -10,10 +12,6 @@ h1 {
 a {
 	color: white;
 }
-
-/*input:hover {
-	border: solid magenta 3px;
-}*/
 
 input, button {
 	font-size: 1.2em;
@@ -36,45 +34,29 @@ input, radio {
 input: hover{}
 
 button {
-	background-color: #007599;
-	border: solid #404040 0px;
-	border-bottom: solid #404040 3px;
+	background-color: #4A148C;
+	border: solid #424242 0px;
+	border-bottom: solid #8E24AA 3px;
 	color: white;
-	box-shadow: 0px 0px 5px #ffffd0;
+	box-shadow: 0px 0px 5px #E1BEE7;
 	border-radius: 1px;
 }
 
 button:hover {
-	background-color: #0090B9;
-	box-shadow: 0px 0px 5px #a0cfff;
+	background-color: #6A1B9A;
+	box-shadow: 0px 0px 5px #9C27B0;
 }
 
-.headerwrap {
-	background-color: #ffffff;
-	border-bottom: solid 3px #404040;
-}
 
 .headerlogo {
     height: 60px;
 }
 
-.body {
-	height: auto;
-	text-align: left;
-}
 
-.bodywrap {
-}
+
 
 .footer {
 	font-size: 0.7em;
-}
-
-.footerwrap {
-	background-color: #404040;
-	bottom: 0;
-	position: absolute;
-	width: 100%;
 }
 
 .header-title {
@@ -87,26 +69,48 @@ button:hover {
 }
 
 .header, .footer, .body {
-	width: 1000px;
+	max-width: 1000px;
 	margin-right: auto;
 	margin-left: auto;
 	padding: 10px;
-	height: 60px;
+	/*height: 60px;*/
 }
 
 .header {
-    color: #303030;
+    color: #ffffff;
+    min-height: 60px;
 }
 
 .footer {
 	color: white;
+	height: 30px;
 }
 
-
-.headerwrap, .footerwrap, .bodywrap {
+#headerwrap, .footerwrap, .bodywrap {
 	padding-top: 10px;
 	padding-bottom: 10px;
 }
+
+#headerwrap {
+	background-color: #212121;
+	border-bottom: solid 30px #4A148C;
+}
+
+#bodywrap {
+	margin-bottom: 50px;
+	clear: both;
+}
+
+#footerwrap {
+	background-color: #212121;
+	left: 0px;
+	bottom: 0px;
+	position: fixed;
+	width: 100%;
+	margin-top: 100px;
+	clear: both;
+}
+
 
 .navbuttons {
 	padding-top: 50px;
@@ -122,6 +126,28 @@ button:hover {
 		width: 95%;
 		padding: 10px;
 	}
+}
+
+@media (max-width: 500px) {
+    .header {
+        height: auto;
+    }
+
+    .body {
+    }
+
+    .header-title {
+        padding-top: 0.5em;
+    }
+
+    .header-image {
+        width: 100%;
+        text-align: right;
+    }
+
+    #headerwrap {
+        min-height: 100px;
+    }
 }
 
 .password-advice {

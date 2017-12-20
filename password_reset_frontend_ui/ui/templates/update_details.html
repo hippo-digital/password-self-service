@@ -48,7 +48,7 @@
 
         uid = control.value
 
-        if (uid.length == 12 && !isNaN(parseFloat(uid)) && isFinite(uid)) {
+        if ((uid.length == 12 && !isNaN(parseFloat(uid)) && isFinite(uid)) || uid.length == 0) {
             markControl(control, 'green');
             showHideAdvice(advice, false);
             return true;
@@ -66,9 +66,9 @@
         mobile = control.value;
         mobile_numeric_element = mobile.substring(1);
 
-        if (mobile.length == 13
-                && mobile.startsWith('+447')
-                && !isNaN(parseFloat(mobile_numeric_element)) && isFinite(mobile_numeric_element)) {
+        if ((mobile.length == 13
+                && mobile.substring(0, 4) == '+447'
+                && !isNaN(parseFloat(mobile_numeric_element)) && isFinite(mobile_numeric_element) || mobile.length == 0)) {
             markControl(control, 'green');
             showHideAdvice(advice, false);
             return true;

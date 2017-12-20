@@ -5,3 +5,10 @@
 */include/
 */lib/
 */pip-selfcheck.json
+
+
+authentication_applet.bin
+authentication_applet/GATicket.jar
+authentication_applet/myKeystore
+authentication_applet/openNhsAuthApplet.class
+authentication_applet/openNhsAuthApplet.jar

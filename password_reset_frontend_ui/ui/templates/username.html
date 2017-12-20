@@ -5,12 +5,15 @@
 
 <br />
 
-<form action="/reset_method" method="post">
+<form action="/reset_method" method="post" onsubmit="return isValid()">
 
-    <p>
+    <div class="password-field">
         Enter the username that you usually use to log in to your computer<br />
-        <input name="username" type="text" placeholder="Username" autocomplete="off"/>
-    </p>
+        <input id="username" name="username" type="text" placeholder="Username" autocomplete="off" onkeyup="checkUsername()"/>
+        <div class="password-advice" id="username-advice">
+            The username must be at least 3 characters long
+        </div>
+    </div>
 
 
     <div class="navbuttons">
@@ -19,3 +22,48 @@
 
 </form>
 
+<script>
+    function isValid() {
+        if (checkUsername()) {
+            return true;
+        } else {
+            alert('There is a problem with the information you have entered.\n\nThis needs to be resolved before you continue.');
+            return false;
+        }
+    }
+
+    function checkUsername() {
+        control = document.getElementById('username');
+        advice = document.getElementById('username-advice');
+
+        username = control.value
+
+        if (username.length >= 3) {
+            markControl(control, 'green');
+            showHideAdvice(advice, false);
+            return true;
+        } else {
+            markControl(control, 'red');
+            showHideAdvice(advice, true);
+            return false;
+        }
+    }
+
+    function markControl(control, colour) {
+        control.style.borderBottomStyle = 'solid';
+        control.style.borderBottomWidth = '5px';
+        control.style.borderBottomColor = colour;
+    }
+
+    function showHideAdvice(control, shown) {
+        if (shown) {
+            control.style.visibility = 'visible';
+            control.style.display = 'inherit';
+            control.style.height = 'auto';
+        } else {
+            control.style.visibility = 'hidden';
+            control.style.display = 'none';
+            control.style.height = '0px';
+        }
+    }
+</script>
