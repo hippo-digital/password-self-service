@@ -1,6 +1,8 @@
 ---
   directory:
-    dn: DC=hd,DC=local
+    dn_list:
+      - CN=Users,DC=hd,DC=local
+      - OU=NewTestOU,DC=hd,DC=local
     fqdn: hd.local
 
   frontend:
