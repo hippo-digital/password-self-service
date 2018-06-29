@@ -1,15 +1,13 @@
 ---
   directory:
-    dn_list:
-      - CN=Users,DC=hd,DC=local
-      - OU=NewTestOU,DC=hd,DC=local
-    fqdn: hd.local
+    dn: DC=michael,DC=hippo,DC=local
+    fqdn: michael.hippo.local
 
   frontend:
-    address: http://10.211.55.2:5002
+    address: http://127.0.0.1:5002
 
   auth_service:
-    address: https://gas.nis1.national.ncrs.nhs.uk
+    address: http://127.0.0.1:5000 #https://gas.nis1.national.ncrs.nhs.uk
     #http://10.211.55.2:5000
 
 #  directory:

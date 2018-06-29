@@ -34,7 +34,7 @@ class poller():
 
         self.config = self.loadconfig('config.yml')
 
-        self.domain_dn_list = self.config['directory']['dn_list']
+        self.domain_dn = self.config['directory']['dn']
         self.domain_fqdn = self.config['directory']['fqdn']
         self.auth_service_validate_ticket_uri = '%s/amserver/sessionservice' % self.config['auth_service']['address']
 
@@ -78,6 +78,85 @@ class poller():
                             except Exception as ex:
                                 self.log.exception('Method=poll, Message=Failed send code, Username=%s, RequestType=%s, ID=%s' % (username, request_type, id))
                                 break
+
+                    if request_type == 'checkauthcode':
+                        if 'username' in content and 'code' in content and 'code_hash' in content:
+                            username = content['username']
+                            code = content['code']
+                            code_hash = content['code_hash']
+
+                        verified = self.check_code(id, username, code, code_hash)
+                        if not verified:
+                            requests.post('%s/checkcoderesponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed', 'message': 'The reset code supplied was incorrect'}))
+                        else:
+                            requests.post('%s/checkcoderesponse/%s/OK' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'OK'}))
+
+                    if request_type == 'checknameexist':
+                        if 'username' in content and 'uid' in content:
+                            username = content['username']
+                            uid = content['uid']
+
+                        user = self.get_user(username)
+
+                        if user is None:
+                            self.log.info(
+                                'Method=send_code, Message=User could not be found in the directory, Username=%s' % username)
+                            requests.post('%s/checknameresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed', 'message': 'User account could not be found'}))
+                        else:
+                            user_id = user['pager'].split(":+", 1)[0]
+                            user_id = user_id.split(":")[1]
+
+                            if (uid == user_id):
+                                requests.post('%s/checknameresponse/%s/OK' % (self.config['frontend']['address'], id),
+                                              data=json.dumps({'status': 'OK'}))
+                            else:
+                                requests.post('%s/checknameresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                              data=json.dumps(
+                                                  {'status': 'Failed', 'message': 'Username and Smartcard does not match.'}))
+
+                    if request_type == 'resetwithsmartcard':
+                        id = unwrapped_request['id']
+                        username = content['username']
+                        password = content['password']
+
+                        try:
+                            self.reset_ad_password(username, password)
+                            requests.post('%s/resetresponse/%s/OK' % (self.config['frontend']['address'], id),
+                                          data=json.dumps({'status': 'OK'}))
+                        except ComplexityNotMetException:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps({'status': 'Failed',
+                                                           'message': 'Password does not meet complexity requirements'}))
+                        except ComplexityNotMetException:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed',
+                                               'message': 'Password does not meet complexity requirements'}))
+                        except UserDoesNotExistException:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed',
+                                               'message': 'The user does not exist in the directory'}))
+                        except CannotConnectToDirectoryException:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed', 'message': 'Could not connect to the directory'}))
+                        except AccessIsDeniedException:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed',
+                                               'message': 'The account could not be reset due to a permissions issue'}))
+                        except Exception:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed',
+                                               'message': 'The account could not be reset due to an undetermined issue'}))
 
                     if request_type == 'reset':
                         try:
@@ -127,8 +206,8 @@ class poller():
         users = None
 
         try:
-            self.log.info('Method=send_code, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn_list))
-            users = q.search(username, self.domain_dn_list)
+            self.log.info('Method=send_code, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
+            users = q.search(username, self.domain_dn)
         except Exception as ex:
             self.log.error('Method=send_code, Message=Error searching for user, Username=%s' % username)
             self.log.exception(ex)
@@ -138,14 +217,8 @@ class poller():
             requests.post('%s/coderesponse/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'User account could not be found'}))
         elif len(users) == 1 and 'mobile' in users[0]:
             user = users[0]
-            pager = user['pager'].split(':')
-            mobile_number = None
-
-            if len(pager) == 3 and pager[0] == 'pwd':
-                mobile_number = pager[2]
-
-            if mobile_number is None or len(mobile_number) < 11:
-                raise Exception('No mobile phone number or invalid number for user: %s' % mobile_number)
+            #mobile_number = user['mobile']
+            mobile_number = user['pager'].split(":+", 1)[1]
 
             code = "%s%s %03d %03d" % (random.choice(string.ascii_uppercase),
                                        random.choice(string.ascii_uppercase),
@@ -310,13 +383,8 @@ class poller():
 
             id = reset_request['id']
             username = reset_request['request_content']['username']
+            password = reset_request['request_content']['password']
             evidence_raw = reset_request['request_content']['evidence']
-            unlock_only = reset_request['request_content']['unlock_only'] == 'true'
-
-            if unlock_only:
-                password = None
-            else:
-                password = reset_request['request_content']['password']
 
             evidence = self.unwrap_request(evidence_raw)
 
@@ -435,8 +503,8 @@ class poller():
         users = None
 
         try:
-            self.log.info('Method=get_user, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn_list))
-            users = q.search(username, self.domain_dn_list)
+            self.log.info('Method=get_user, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
+            users = q.search(username, self.domain_dn)
         except Exception as ex:
             self.log.exception('Method=get_user, Message=Error searching for user, Username=%s' % username)
 
@@ -445,7 +513,7 @@ class poller():
 
         return None
 
-    def reset_ad_password(self, username, new_password=None):
+    def reset_ad_password(self, username, new_password):
         self.log.info('Method=reset_ad_password, Message=Resetting password, Username=%s' % username)
         from pyad import pyadexceptions
 
@@ -457,7 +525,7 @@ class poller():
             self.log.exception('Method=reset_ad_password, Message=Failed search for user in AD')
 
         try:
-            users = q.search(username, self.domain_dn_list)
+            users = q.search(username, self.domain_dn)
         except pywintypes.com_error as ex:
             if 'referral was returned' in ex.excepinfo[2]:
                 raise(CannotConnectToDirectoryException)
@@ -474,7 +542,7 @@ class poller():
 
         try:
             pwd = set_password.set_password()
-            pwd.set(user['distinguishedName'], user['distinguishedName'], self.config['directory']['fqdn'], password=new_password)
+            pwd.set(user['distinguishedName'], new_password, self.config['directory']['dn'], self.config['directory']['fqdn'])
         except pyadexceptions.win32Exception as ex:
             if ex.error_info['error_code'] == '0x80070005':
                 raise(AccessIsDeniedException)

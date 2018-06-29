@@ -2,20 +2,20 @@
 # from pyad import aduser, adquery
 
 class search_object:
-    def search(self, object_cn, domain_dn_list):
+    def search(self, object_cn, domain_dn):
         import pyad
         from pyad import aduser, adquery
 
         query = pyad.adquery.ADQuery()
+
+        query.execute_query(attributes = ["distinguishedName", "description", "mobile", "pager"],
+                                where_clause = "'samAccountName' = '%s'" % object_cn,
+                                base_dn = domain_dn)
+
         results = []
 
-        for domain_dn in domain_dn_list:
-            query.execute_query(attributes = ["distinguishedName", "description", "mobile", "pager"],
-                                    where_clause = "'samAccountName' = '%s'" % object_cn,
-                                    base_dn = domain_dn)
-
-            for row in query.get_results():
-                results.append(row)
+        for row in query.get_results():
+            results.append(row)
 
         return results
 

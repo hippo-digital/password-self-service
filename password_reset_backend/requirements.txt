@@ -1,8 +1,13 @@
 flask
+
 pycrypto
+
 redis
+
 requests
+
 mock
+
 pyyaml
 twilio
 ldap3
