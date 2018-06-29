@@ -34,7 +34,7 @@ class poller():
 
         self.config = self.loadconfig('config.yml')
 
-        self.domain_dn = self.config['directory']['dn']
+        self.domain_dn_list = self.config['directory']['dn_list']
         self.domain_fqdn = self.config['directory']['fqdn']
         self.auth_service_validate_ticket_uri = '%s/amserver/sessionservice' % self.config['auth_service']['address']
 
@@ -127,8 +127,8 @@ class poller():
         users = None
 
         try:
-            self.log.info('Method=send_code, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
-            users = q.search(username, self.domain_dn)
+            self.log.info('Method=send_code, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn_list))
+            users = q.search(username, self.domain_dn_list)
         except Exception as ex:
             self.log.error('Method=send_code, Message=Error searching for user, Username=%s' % username)
             self.log.exception(ex)
@@ -138,7 +138,14 @@ class poller():
             requests.post('%s/coderesponse/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'User account could not be found'}))
         elif len(users) == 1 and 'mobile' in users[0]:
             user = users[0]
-            mobile_number = user['mobile']
+            pager = user['pager'].split(':')
+            mobile_number = None
+
+            if len(pager) == 3 and pager[0] == 'pwd':
+                mobile_number = pager[2]
+
+            if mobile_number is None or len(mobile_number) < 11:
+                raise Exception('No mobile phone number or invalid number for user: %s' % mobile_number)
 
             code = "%s%s %03d %03d" % (random.choice(string.ascii_uppercase),
                                        random.choice(string.ascii_uppercase),
@@ -303,8 +310,13 @@ class poller():
 
             id = reset_request['id']
             username = reset_request['request_content']['username']
-            password = reset_request['request_content']['password']
             evidence_raw = reset_request['request_content']['evidence']
+            unlock_only = reset_request['request_content']['unlock_only'] == 'true'
+
+            if unlock_only:
+                password = None
+            else:
+                password = reset_request['request_content']['password']
 
             evidence = self.unwrap_request(evidence_raw)
 
@@ -423,8 +435,8 @@ class poller():
         users = None
 
         try:
-            self.log.info('Method=get_user, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn))
-            users = q.search(username, self.domain_dn)
+            self.log.info('Method=get_user, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn_list))
+            users = q.search(username, self.domain_dn_list)
         except Exception as ex:
             self.log.exception('Method=get_user, Message=Error searching for user, Username=%s' % username)
 
@@ -433,7 +445,7 @@ class poller():
 
         return None
 
-    def reset_ad_password(self, username, new_password):
+    def reset_ad_password(self, username, new_password=None):
         self.log.info('Method=reset_ad_password, Message=Resetting password, Username=%s' % username)
         from pyad import pyadexceptions
 
@@ -445,7 +457,7 @@ class poller():
             self.log.exception('Method=reset_ad_password, Message=Failed search for user in AD')
 
         try:
-            users = q.search(username, self.domain_dn)
+            users = q.search(username, self.domain_dn_list)
         except pywintypes.com_error as ex:
             if 'referral was returned' in ex.excepinfo[2]:
                 raise(CannotConnectToDirectoryException)
@@ -462,7 +474,7 @@ class poller():
 
         try:
             pwd = set_password.set_password()
-            pwd.set(user['distinguishedName'], new_password, self.config['directory']['dn'], self.config['directory']['fqdn'])
+            pwd.set(user['distinguishedName'], user['distinguishedName'], self.config['directory']['fqdn'], password=new_password)
         except pyadexceptions.win32Exception as ex:
             if ex.error_info['error_code'] == '0x80070005':
                 raise(AccessIsDeniedException)

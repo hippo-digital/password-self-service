@@ -1,12 +1,14 @@
 import logging
 
 class set_password:
-    def set(self, account_dn, password, domain_dn, server):
+    def set(self, account_dn, domain_dn, server, password=None):
         self.log = logging.getLogger('password_reset_backend')
 
         import pyad
         user = pyad.aduser.ADUser.from_dn(account_dn, options={'ldap_server':server})
-        user.set_password(password)
+
+        if password is not None:
+            user.set_password(password)
 
         try:
             user.update_attribute('lockoutTime', 0)
