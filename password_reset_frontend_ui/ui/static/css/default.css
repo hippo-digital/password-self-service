@@ -81,9 +81,13 @@ button:hover {
     min-height: 60px;
 }
 
-.footer {
+.footer, footer-link {
 	color: white;
 	height: 30px;
+}
+
+.footer-link {
+    color: white;
 }
 
 #headerwrap, .footerwrap, .bodywrap {
