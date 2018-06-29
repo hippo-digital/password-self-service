@@ -35,7 +35,8 @@ def log_request():
 @app.route('/')
 @app.route('/start')
 def start():
-    return basic_render('start')
+    help_link = config['help_link']
+    return fields_render('start', fields={'help_link': help_link})
 
 @app.route('/username')
 def username():
@@ -199,10 +200,12 @@ def reset():
     password = request.form['password']
     password_confirm = request.form['password-confirm']
 
+    unlock_only = str(not ('unlock' in request.form and request.form['unlock'] == 'on')).lower()
+
     if password != password_confirm:
         return 'Passwords do not match'
 
-    store_request(id, 'reset', {'username': username, 'evidence': evidence, 'password': password})
+    store_request(id, 'reset', {'username': username, 'evidence': evidence, 'password': password, 'unlock_only': unlock_only})
 
     res = {}
     timeout_counter = 0
