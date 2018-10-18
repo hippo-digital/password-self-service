@@ -49,5 +49,13 @@ The file is: C:\git\password-self-service\password_reset_backend\config.yml
     db: 0
 ````
 
+### Deploy Front-end on Ubuntu
 
+**Note** It is recommended that Canonical.UbuntuServer-16.04-LTS is used as the VM image
 
+1. SSH to the VM
+2. Install the necessary components using `apt-get`
+````
+sudo apt-get Update
+sudo apt-get install git python ansible
+````

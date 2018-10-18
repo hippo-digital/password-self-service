@@ -1,9 +1,12 @@
 [all]
-34.253.213.168 hostname=pwdfe
+#34.253.213.168 hostname=pwdfe
+rth.myidentity.care hostname=pwdfe ansible_user=azureuser
+
+[local]
+127.0.0.1 hostname=pwdfe ansible_user=azureuser
 
 [aws-ci]
 172.31.43.102 hostname=pwd-ci-fe-01
 
 [aws-ci-be]
 172.31.32.201 hostname=pwd-ci-be-01
-
