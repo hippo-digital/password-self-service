@@ -54,7 +54,7 @@ The file is: C:\git\password-self-service\password_reset_backend\config.yml
 **Notes:**
 
 * It is recommended that Canonical.UbuntuServer-16.04-LTS is used as the VM image
-* The VM should be configured to allow ports 22, 443 and 444 for ingress
+* The VM should be configured to allow ports 22, 80, 443 and 444 for ingress
 
 1. SSH to the VM
 2. Install the necessary components using `apt-get`
@@ -93,15 +93,27 @@ Amend the nginx configuration for the UI:
 sudo vim /etc/nginx/sites-available/hippo-pwd-ui
 ````
 
-Replace all instances of `pwd.hippo.digital` with the desired hostname, e.g. `myorg.myidentity.care`
+Replace all instances of `pwd.hippo.digital` with the desired hostname, e.g. `myorg.myidentity.care` (from section 1 of the 'Per-site Configuration' guide)
 
 ````
 sudo vim /etc/nginx/sites-available/hippo-pwd-receiver
 ````
 
-Replace all instances of `pwd.hippo.digital` with the desired hostname, e.g. `myorg.myidentity.care`
+Replace all instances of `pwd.hippo.digital` with the desired hostname, e.g. `myorg.myidentity.care` (from section 1 of the 'Per-site Configuration' guide)
+
+Configure the requests encryption public key:
+
+````
+sudo su - pwdservice
+
+vim password-self-service/password_reset_frontend_ui/ui/config.yml
+````
+
+Replace content with the configuration pertinent to your organisation (from section 2 of the 'Per-site Configuration' guide)
 
 6. Add SSL certificate
+
+The private key and certificate files can be found in sections **3** and **4** respectively of the 'Per-site Configuration' guide
 
 ````
 sudo vim /etc/hippo-pwd/rotherham.myidentity.care.key
@@ -113,7 +125,7 @@ sudo vim /etc/hippo-pwd/rotherham.myidentity.care.pem
 sudo chmod 400 /etc/hippo-pwd/rotherham.myidentity.care
 ````
 
-Reset the host
+7. Reset the host
 
 ````
 sudo init 6
