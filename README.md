@@ -51,11 +51,66 @@ The file is: C:\git\password-self-service\password_reset_backend\config.yml
 
 ### Deploy Front-end on Ubuntu
 
-**Note** It is recommended that Canonical.UbuntuServer-16.04-LTS is used as the VM image
+**Notes:**
+
+* It is recommended that Canonical.UbuntuServer-16.04-LTS is used as the VM image
+* The VM should be configured to allow ports 22, 443 and 444 for ingress
 
 1. SSH to the VM
 2. Install the necessary components using `apt-get`
+
 ````
 sudo apt-get Update
-sudo apt-get install git python ansible
+sudo apt-get install git python make
+
+sudo apt-get install software-properties-common
+sudo apt-add-repository --yes --update ppa:ansible/ansible
+sudo apt-get install ansible
+````
+3. Generate and configure keypair for ansible
+
+````
+ssh-keygen -t rsa
+# Press return for all questions
+
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+````
+
+4. Install Password Reset Front-end
+
+````
+cd ~/password-self-service/ansible
+ansible-playbook -i inventories/main --limit local install_frontend.yml -u azureuser --sudo --private-key=~/.ssh/id_rsa
+````
+
+5. Configure for local settings
+
+Amend the nginx configuration for the UI:
+
+````
+sudo vim /etc/nginx/sites-available/hippo-pwd-ui
+````
+
+Replace all instances of `pwd.hippo.digital` with the desired hostname, e.g. `myorg.myidentity.care`
+
+````
+sudo vim /etc/nginx/sites-available/hippo-pwd-receiver
+````
+
+Replace all instances of `pwd.hippo.digital` with the desired hostname, e.g. `myorg.myidentity.care`
+
+6. Add SSL certificate
+
+````
+sudo vim /etc/hippo-pwd/rotherham.myidentity.care.key
+# Paste the content of the private key, and save
+
+sudo vim /etc/hippo-pwd/rotherham.myidentity.care.pem
+# Paste the content of the certificate, and save
+````
+
+Reset the host
+
+````
+sudo init 6
 ````
