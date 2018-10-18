@@ -60,12 +60,12 @@ The file is: C:\git\password-self-service\password_reset_backend\config.yml
 2. Install the necessary components using `apt-get`
 
 ````
-sudo apt-get Update
+sudo apt-get update
 sudo apt-get install git python make
 
-sudo apt-get install software-properties-common
+sudo apt-get install -y software-properties-common
 sudo apt-add-repository --yes --update ppa:ansible/ansible
-sudo apt-get install ansible
+sudo apt-get install -y ansible
 ````
 3. Generate and configure keypair for ansible
 
@@ -79,6 +79,8 @@ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
 4. Install Password Reset Front-end
 
 ````
+git clone https://github.com/hippodigital/password-self-service.git
+
 cd ~/password-self-service/ansible
 ansible-playbook -i inventories/main --limit local install_frontend.yml -u azureuser --sudo --private-key=~/.ssh/id_rsa
 ````
@@ -107,6 +109,8 @@ sudo vim /etc/hippo-pwd/rotherham.myidentity.care.key
 
 sudo vim /etc/hippo-pwd/rotherham.myidentity.care.pem
 # Paste the content of the certificate, and save
+
+sudo chmod 400 /etc/hippo-pwd/rotherham.myidentity.care
 ````
 
 Reset the host
