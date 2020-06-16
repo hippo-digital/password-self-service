@@ -4,4 +4,5 @@ redis
 requests
 mock
 pyyaml
-
+jinja2
+pyasn1

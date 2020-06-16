@@ -38,6 +38,15 @@ def requests():
 
     return json.dumps(outstanding_requests)
 
+@app.route('/checknameresponse/<id>/<status>', methods=['POST'])
+def checknameresponse(id, status):
+    body = request.data.decode('utf-8')
+    return parse_and_store_response(id, status, body, 'check_name_response')
+
+@app.route('/checkcoderesponse/<id>/<status>', methods=['POST'])
+def checkcoderesponse(id, status):
+    body = request.data.decode('utf-8')
+    return parse_and_store_response(id, status, body, 'check_code_response')
 
 @app.route('/coderesponse/<id>/<status>', methods=['POST'])
 def coderesponse(id, status):

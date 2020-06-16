@@ -79,6 +79,85 @@ class poller():
                                 self.log.exception('Method=poll, Message=Failed send code, Username=%s, RequestType=%s, ID=%s' % (username, request_type, id))
                                 break
 
+                    if request_type == 'checkauthcode':
+                        if 'username' in content and 'code' in content and 'code_hash' in content:
+                            username = content['username']
+                            code = content['code']
+                            code_hash = content['code_hash']
+
+                        verified = self.check_code(id, username, code, code_hash)
+                        if not verified:
+                            requests.post('%s/checkcoderesponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed', 'message': 'The reset code supplied was incorrect'}))
+                        else:
+                            requests.post('%s/checkcoderesponse/%s/OK' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'OK'}))
+
+                    if request_type == 'checknameexist':
+                        if 'username' in content and 'uid' in content:
+                            username = content['username']
+                            uid = content['uid']
+
+                        user = self.get_user(username)
+
+                        if user is None:
+                            self.log.info(
+                                'Method=send_code, Message=User could not be found in the directory, Username=%s' % username)
+                            requests.post('%s/checknameresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed', 'message': 'User account could not be found'}))
+                        else:
+                            user_id = user['pager'].split(":+", 1)[0]
+                            user_id = user_id.split(":")[1]
+
+                            if (uid == user_id):
+                                requests.post('%s/checknameresponse/%s/OK' % (self.config['frontend']['address'], id),
+                                              data=json.dumps({'status': 'OK'}))
+                            else:
+                                requests.post('%s/checknameresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                              data=json.dumps(
+                                                  {'status': 'Failed', 'message': 'Username and Smartcard does not match.'}))
+
+                    if request_type == 'resetwithsmartcard':
+                        id = unwrapped_request['id']
+                        username = content['username']
+                        password = content['password']
+
+                        try:
+                            self.reset_ad_password(username, password)
+                            requests.post('%s/resetresponse/%s/OK' % (self.config['frontend']['address'], id),
+                                          data=json.dumps({'status': 'OK'}))
+                        except ComplexityNotMetException:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps({'status': 'Failed',
+                                                           'message': 'Password does not meet complexity requirements'}))
+                        except ComplexityNotMetException:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed',
+                                               'message': 'Password does not meet complexity requirements'}))
+                        except UserDoesNotExistException:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed',
+                                               'message': 'The user does not exist in the directory'}))
+                        except CannotConnectToDirectoryException:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed', 'message': 'Could not connect to the directory'}))
+                        except AccessIsDeniedException:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed',
+                                               'message': 'The account could not be reset due to a permissions issue'}))
+                        except Exception:
+                            requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                                          data=json.dumps(
+                                              {'status': 'Failed',
+                                               'message': 'The account could not be reset due to an undetermined issue'}))
+
                     if request_type == 'reset':
                         try:
                             self.reset_password(unwrapped_request)
