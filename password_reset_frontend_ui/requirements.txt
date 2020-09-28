@@ -4,3 +4,5 @@ requests
 mock
 pyyaml
 pycryptodome
+jinja2
+pyasn1
