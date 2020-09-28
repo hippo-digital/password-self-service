@@ -1,21 +1,27 @@
 # import pyad
 # from pyad import aduser, adquery
 
-class search_object:
-    def search(self, object_cn, domain_dn_list):
-        import pyad
-        from pyad import aduser, adquery
+import pyad
+from pyad import *
 
-        query = pyad.adquery.ADQuery()
+class search_object:
+    def search(self, object_cn, domain_dn_list, fqdn):
+
+        pyad.set_defaults(ldap_server=fqdn)
+
+        query = adquery.ADQuery()
         results = []
 
         for domain_dn in domain_dn_list:
-            query.execute_query(attributes = ["distinguishedName", "description", "mobile", "pager"],
-                                    where_clause = "'samAccountName' = '%s'" % object_cn,
-                                    base_dn = domain_dn)
+            try:
+                query.execute_query(attributes = ["distinguishedName", "description", "mobile", "pager"],
+                                        where_clause = "'samAccountName' = '%s'" % object_cn,
+                                        base_dn = domain_dn)
 
-            for row in query.get_results():
-                results.append(row)
+                for row in query.get_results():
+                    results.append(row)
+            except:
+                pass
 
         return results
 

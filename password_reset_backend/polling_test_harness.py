@@ -1,14 +1,21 @@
 import poller
 import time
 import logging
+import os
 
 log = logging.getLogger('password_reset_backend')
 log.setLevel(logging.DEBUG)
-fh = logging.FileHandler('c:\\temp\\password_reset_backend.log')
-fh.setLevel(logging.DEBUG)
-log.addHandler(fh)
-formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
-fh.setFormatter(formatter)
+
+if os.getenv('LOG_STDOUT', 'false').lower().strip() == 'true':
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    log.addHandler(ch)
+else:
+    fh = logging.FileHandler('c:\\temp\\password_reset_backend.log')
+    fh.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
+    fh.setFormatter(formatter)
+    log.addHandler(fh)
 
 if __name__ == '__main__':
     p = poller.poller()

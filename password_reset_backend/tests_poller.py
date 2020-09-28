@@ -110,7 +110,7 @@ class tests_poller(unittest.TestCase):
             from ad_connector import search_object
 
             so = search_object.search_object()
-            so.search('test_cn', 'test_domain')
+            so.search('test_cn', 'test_domain', 'test_host')
             None
 
     def test__poll__whenSingleRequestForCodeRetrieved__calls_send_sms(self):
@@ -169,5 +169,5 @@ class user_obj:
         self.entry_attributes_as_dict = {'sn': ['Smith'], 'givenName': ['Sandra'], 'mail': ['sandra.smith@example.org'], 'mobile': ['123456']}
 
 class wibble:
-    def search(self, a, b):
+    def search(self, a, b, c):
         return [{'sn': 'Smith', 'givenName': 'Sandra', 'mail': 'sandra.smith@example.org', 'mobile': '123456', 'distinguishedName': ['CN=Sandra.Smith,OU=Users,DC=example,DC=com']}]

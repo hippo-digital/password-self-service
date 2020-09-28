@@ -87,5 +87,5 @@ def parse_and_store_response(id, status, body, storage_key):
 
 log = logging.getLogger('password_reset_frontend')
 
-storage(db = redis_db)
+storage(db = redis_db, address=os.getenv('REDIS_HOST', 'localhost'))
 
