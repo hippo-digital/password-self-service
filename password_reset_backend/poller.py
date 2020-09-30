@@ -105,7 +105,7 @@ class poller():
 
                         if user is None:
                             self.log.info(
-                                'Method=send_code, Message=User could not be found in the directory, Username=%s' % username)
+                                'Method=poll, Message=User could not be found in the directory, Username=%s' % username)
                             requests.post('%s/checknameresponse/%s/Failed' % (self.frontend_addr, id),
                                           data=json.dumps(
                                               {'status': 'Failed', 'message': 'User account could not be found'}))
@@ -229,7 +229,11 @@ class poller():
                 mobile_number = pager[2]
 
             if mobile_number is None or len(mobile_number) < 11:
-                raise Exception('No mobile phone number or invalid number for user: %s, %s' % (mobile_number, user['pager']))
+                requests.post('%s/coderesponse/%s/Failed' % (self.frontend_addr, id),
+                                          data=json.dumps({'status': 'Failed',
+                                                           'message': 'Failed to send an auth code, user registered phone number was invalid'}))
+                self.log.exception('Method=send_code, Message=No mobile phone number or invalid number for user: %s, %s' % (mobile_number, user['pager']))
+                return
 
             code = "%s%s %03d %03d" % (random.choice(string.ascii_uppercase),
                                        random.choice(string.ascii_uppercase),
