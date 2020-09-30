@@ -1,7 +1,7 @@
 ---
   directory:
     dn_list:
-      - CN=Users,DC=hd,DC=local
+      - CN=Users,DC=michael,DC=hippo,DC=local
       - OU=NewTestOU,DC=hd,DC=local
     fqdn: hd.local
 
@@ -21,9 +21,9 @@
 
   sms:
     message: "A reset code has been requested for your account.\n\nIf this was in error contact the service desk on extension 8844.\n\nYour reset code is %s"
-    organisation_shortname: "441466455031"
-    twilio_sid: ACf5e81dd572ad916b9dbd6d1883e755ae
-    twilio_authcode: b3ae4c2f616c9f9529aba41ce219cfd6
+    organisation_shortname: "+15005550006"
+    twilio_sid: AC78f4b641c8b3cf672047f462501fa6b9
+    twilio_authcode: a7178f9726edf74e952a6e0eed5f44ce
 
   redis:
     address: 127.0.0.1
