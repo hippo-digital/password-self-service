@@ -1,36 +1,22 @@
-<label style="visibility: hidden; display: none; height: 0px;" id="pageTitle"
-       title="Reset your Account"></label>
+{% extends "index.html" %}
 
-<p>How would you like to reset your password?</p>
+{% block title %}Reset method{% endblock %}
+{% block heading %}Reset your account{% endblock %}
 
-<form action="/reset_method" method="post">
-    {% for field in fields %}
-        <input name="{{ field }}" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields[field] }}" autocomplete="off"></input>
-    {% endfor %}
+{% block content %}
+    <p>How would you like to reset your password?</p>
 
-    <input type="radio" name="resetMethod" value="code" id="mobile" checked>Mobile Phone Code<br />
-    <input type="radio" name="resetMethod" value="spineauth" id="smartcard">NHS Smartcard<br />
+    <form action="/reset_method" method="post">
+        {% for field in fields %}
+            <input name="{{ field }}" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields[field] }}" autocomplete="off"></input>
+        {% endfor %}
 
-    <div class="navbuttons">
-        <button class="btn" type="submit" value="Submit">Next ></button>
-    </div>
+        <input type="radio" name="resetMethod" value="code" id="mobile" checked>Mobile Phone Code<br />
+        <input type="radio" name="resetMethod" value="spineauth" id="smartcard">NHS Smartcard<br />
 
-</form>
+        <div class="navbuttons">
+            <button class="btn" type="submit" value="Submit">Next ></button>
+        </div>
 
-<!--<div class="navbuttons">-->
-<!--&lt;!&ndash;<button class="btn" onclick="goToNextPageBasedRadioButton()" value="username">Start &nbsp;></button>&ndash;&gt;-->
-<!--<button class="btn" onclick="protoNavAction()" value="username">Start &nbsp;></button>-->
-<!--</div>-->
-
-<!--<script>-->
-    <!--function goToNextPageBasedRadioButton() {-->
-        <!--var smartcard_check = document.getElementById('smartcard');-->
-        <!--var mobile_check = document.getElementById('mobile');-->
-
-        <!--if (smartcard_check.checked) {-->
-            <!--protoNavAction(smartcard_check);-->
-        <!--} else {-->
-            <!--protoNavAction(mobile_check);-->
-        <!--}-->
-    <!--}-->
-<!--</script>-->
+    </form>
+{% endblock %}

@@ -1,15 +1,18 @@
-<label style="visibility: hidden; display: none; height: 0px;" id="pageTitle"
-       title="Welcome to the Password Self-Service Tool"></label>
+{% extends "index.html" %}
 
-<p>You can either recover an account for which you have forgotten the password, or register to use the service.</p>
+{% block title %}Password reset tool{% endblock %}
+{% block heading %}Welcome to the Password Self-Service Tool{% endblock %}
 
-<div class="navbuttons">
-<button class="btn" onclick="protoNavAction(this)" value="username">Recover my account &nbsp;></button><br /><br />
-<button class="btn" onclick="protoNavAction(this)" value="register">Register to use the service &nbsp;></button>
-</div>
+{% block content %}
+    <p>You can either recover an account for which you have forgotten the password, or register to use the service.</p>
 
-<br /><br />
-<div>
-{{ fields.help_link|safe }}
-</div>
+    <div class="navbuttons">
+    <button class="btn" onclick="protoNavAction(this)" value="username">Recover my account &nbsp;></button><br /><br />
+    <button class="btn" onclick="protoNavAction(this)" value="register">Register to use the service &nbsp;></button>
+    </div>
 
+    <br /><br />
+    <div>
+    {{ fields.help_link|safe }}
+    </div>
+{% endblock %}

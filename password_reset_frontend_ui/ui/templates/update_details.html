@@ -1,99 +1,103 @@
-<label style="visibility: hidden; display: none; height: 0px;" id="pageTitle"
-       title="Register to Use The Service"></label>
+{% extends "index.html" %}
 
+{% block title %}Update details{% endblock %}
+{% block heading %}Register to use the service{% endblock %}
 
-<form action="/register" method="post" onsubmit="return isValid()">
+{% block content %}
+    <form action="/register" method="post" onsubmit="return isValid()">
 
-    <input name="id" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields.id }}" autocomplete="off"></input>
-    <input name="dn" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields.dn }}" autocomplete="off"></input>
-    <input name="username" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields.username }}" autocomplete="off"></input>
-    <input name="evidence" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields.evidence }}" autocomplete="off"></input>
+        <input name="id" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields.id }}" autocomplete="off"></input>
+        <input name="dn" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields.dn }}" autocomplete="off"></input>
+        <input name="username" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields.username }}" autocomplete="off"></input>
+        <input name="evidence" type="text" style="visibility: hidden; display: none; height: 0px;" value="{{ fields.evidence }}" autocomplete="off"></input>
 
-    <div class="password-field">
-        Enter your mobile phone number<br />
-        <input id="mobile" name="mobile" type="text" placeholder="Mobile number" autocomplete="off" value="{{ fields.mobile }}" onkeyup="checkMobile()"/>
-        <div class="password-advice" id="mobile-advice">
-            The mobile number must be valid, and must start +447, e.g. (+447059328646)
+        <div class="password-field">
+            Enter your mobile phone number<br />
+            <input id="mobile" name="mobile" type="text" placeholder="Mobile number" autocomplete="off" value="{{ fields.mobile }}" onkeyup="checkMobile()"/>
+            <div class="password-advice" id="mobile-advice">
+                The mobile number must be valid, and must start +447, e.g. (+447059328646)
+            </div>
         </div>
-    </div>
 
-    <div class="password-field">
-        Enter the 12 digit UUID from the front of your Smartcard<br />
-        <input id="uid" name="uid" type="text" placeholder="Smartcard UUID" autocomplete="off" value="{{ fields.uid }}" onkeyup="checkUID()"/>
-        <div class="password-advice" id="uid-advice">
-            The UID must be a number that is 12 digits long
+
+        <div class="password-field">
+            Enter the 12 digit UUID from the front of your smartcard<br />
+            <input id="uid" name="uid" type="text" placeholder="Smartcard UUID" autocomplete="off" value="{{ fields.uid }}" onkeyup="checkUID()"/>
+            <div class="password-advice" id="uid-advice">
+                The UID must be a number that is 12 digits long
+            </div>
         </div>
-    </div>
 
 
-    <div class="navbuttons">
-        <button class="btn" type="submit" value="Submit">Next ></button>
-    </div>
+        <div class="navbuttons">
+            <button class="btn" type="submit" value="Submit">Next ></button>
+        </div>
 
-</form>
+    </form>
 
-<script>
-    function isValid() {
-        if (checkMobile() && checkUID()) {
-            return true;
-        } else {
-            alert('There is a problem with the information you have entered.\n\nThis needs to be resolved before you continue.');
-            return false;
+    <script>
+        function isValid() {
+            if (checkMobile() && checkUID()) {
+                return true;
+            } else {
+                alert('There is a problem with the information you have entered.\n\nThis needs to be resolved before you continue.');
+                return false;
+            }
         }
-    }
 
-    function checkUID() {
-        control = document.getElementById('uid');
-        advice = document.getElementById('uid-advice');
+        function checkUID() {
+            control = document.getElementById('uid');
+            advice = document.getElementById('uid-advice');
 
-        uid = control.value
+            uid = control.value
 
-        if ((uid.length == 12 && !isNaN(parseFloat(uid)) && isFinite(uid)) || uid.length == 0) {
-            markControl(control, 'green');
-            showHideAdvice(advice, false);
-            return true;
-        } else {
-            markControl(control, 'red');
-            showHideAdvice(advice, true);
-            return false;
+            if ((uid.length == 12 && !isNaN(parseFloat(uid)) && isFinite(uid)) || uid.length == 0) {
+                markControl(control, 'green');
+                showHideAdvice(advice, false);
+                return true;
+            } else {
+                markControl(control, 'red');
+                showHideAdvice(advice, true);
+                return false;
+            }
         }
-    }
 
-    function checkMobile() {
-        control = document.getElementById('mobile');
-        advice = document.getElementById('mobile-advice');
+        function checkMobile() {
+            control = document.getElementById('mobile');
+            advice = document.getElementById('mobile-advice');
 
-        mobile = control.value;
-        mobile_numeric_element = mobile.substring(1);
+            mobile = control.value;
+            mobile_numeric_element = mobile.substring(1);
 
-        if ((mobile.length == 13
-                && mobile.substring(0, 4) == '+447'
-                && !isNaN(parseFloat(mobile_numeric_element)) && isFinite(mobile_numeric_element) || mobile.length == 0)) {
-            markControl(control, 'green');
-            showHideAdvice(advice, false);
-            return true;
-        } else {
-            markControl(control, 'red');
-            showHideAdvice(advice, true);
-            return false;
+            if ((mobile.length == 13
+                    && mobile.substring(0, 4) == '+447'
+                    && !isNaN(parseFloat(mobile_numeric_element)) && isFinite(mobile_numeric_element) || mobile.length == 0)) {
+                markControl(control, 'green');
+                showHideAdvice(advice, false);
+                return true;
+            } else {
+                markControl(control, 'red');
+                showHideAdvice(advice, true);
+                return false;
+            }
         }
-    }
 
-    function markControl(control, colour) {
-        control.style.borderBottomStyle = 'solid';
-        control.style.borderBottomWidth = '5px';
-        control.style.borderBottomColor = colour;
-    }
-
-    function showHideAdvice(control, shown) {
-        if (shown) {
-            control.style.visibility = 'visible';
-            control.style.display = 'inherit';
-            control.style.height = 'auto';
-        } else {
-            control.style.visibility = 'hidden';
-            control.style.display = 'none';
-            control.style.height = '0px';
+        function markControl(control, colour) {
+            control.style.borderBottomStyle = 'solid';
+            control.style.borderBottomWidth = '5px';
+            control.style.borderBottomColor = colour;
         }
-    }
-</script>
+
+        function showHideAdvice(control, shown) {
+            if (shown) {
+                control.style.visibility = 'visible';
+                control.style.display = 'inherit';
+                control.style.height = 'auto';
+            } else {
+                control.style.visibility = 'hidden';
+                control.style.display = 'none';
+                control.style.height = '0px';
+            }
+        }
+    </script>
+{% endblock %}

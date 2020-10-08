@@ -1,12 +1,14 @@
-<label style="visibility: hidden; display: none; height: 0px;" id="pageTitle"
-       title="Your password is reset"></label>
+{% extends "index.html" %}
 
-<p>Your account has now been reset.</p>
+{% block title %}Reset successful{% endblock %}
+{% block heading %}Your password is reset{% endblock %}
 
-<p>If you changed your password, you will now be able to log in using your new password.</p>
+{% block content %}
+    <p>Your account has now been reset.</p>
 
+    <p>If you changed your password, you will now be able to log in using your new password.</p>
 
-<div class="navbuttons">
-<button class="btn" onclick="protoNavAction(this)" value="">Go back to the Start</button>
-</div>
-
+    <div class="navbuttons">
+    <button class="btn" onclick="protoNavAction(this)" value="">Go back to the start</button>
+    </div>
+{% endblock %}

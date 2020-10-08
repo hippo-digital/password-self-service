@@ -1,91 +1,94 @@
-<label style="visibility: hidden; display: none; height: 0px;" id="pageTitle"
-       title="Checking your Smartcard..."></label>
+{% extends "index.html" %}
 
-<p>You may be prompted to enter your Smartcard PIN</p>
-<div id="appletArea"></div>
+{% block title %}Smartcard auth{% endblock %}
+{% block heading %}Checking your Smartcard...{% endblock %}
 
-<p>If an error appears above or you are not prompted for your Smartcard passcode, you may need to try again or contact your helpdesk.</p>
+{% block content %}
+    <p>You may be prompted to enter your Smartcard PIN</p>
+    <div id="appletArea"></div>
 
-<div class="navbuttons">
-<button class="btn" onclick="protoNavAction(this)" value="start">< Go back</button>
-</div>
+    <p>If an error appears above or you are not prompted for your Smartcard passcode, you may need to try again or contact your helpdesk.</p>
+
+    <div class="navbuttons">
+    <button class="btn" onclick="protoNavAction(this)" value="start">< Go back</button>
+    </div>
 
 
-<script>
-    var tokenSnippet= "<OBJECT classid='clsid:8AD9C840-044E-11D1-B3E9-00805F499D93' width='200' height='130'> " +
-                                "<param name='CODEBASE' VALUE='/static/'> " +
-                                "<param name='archive' value='openNhsAuthApplet.jar'/> " +
-                                "<param name='code' value='openNhsAuthApplet'/> " +
-                                "<param name='type' value='application/x-java-applet'/> " +
-                                "<param name='timeout' value='30'/> " +
-                                "<param name='mayscript' value='true'/> " +
-                                "</OBJECT>";
+    <script>
+        var tokenSnippet= "<OBJECT classid='clsid:8AD9C840-044E-11D1-B3E9-00805F499D93' width='200' height='130'> " +
+                                    "<param name='CODEBASE' VALUE='/static/'> " +
+                                    "<param name='archive' value='openNhsAuthApplet.jar'/> " +
+                                    "<param name='code' value='openNhsAuthApplet'/> " +
+                                    "<param name='type' value='application/x-java-applet'/> " +
+                                    "<param name='timeout' value='30'/> " +
+                                    "<param name='mayscript' value='true'/> " +
+                                    "</OBJECT>";
 
-    var ticket = null;
+        var ticket = null;
 
-    function invokeApplet() {
-        var appletArea = document.getElementById('appletArea');
-        appletArea.innerHTML = tokenSnippet;
-    }
+        function invokeApplet() {
+            var appletArea = document.getElementById('appletArea');
+            appletArea.innerHTML = tokenSnippet;
+        }
 
-    function getCookieById(id) {
-        var cookies = document.cookie.split(';');
+        function getCookieById(id) {
+            var cookies = document.cookie.split(';');
 
-        for (i in cookies) {
-            cookie = cookies[i].trim();
+            for (i in cookies) {
+                cookie = cookies[i].trim();
 
-            cookieName = cookie.split('=')[0];
-            cookieValue = cookie.substr(cookie.indexOf('=') + 1);
+                cookieName = cookie.split('=')[0];
+                cookieValue = cookie.substr(cookie.indexOf('=') + 1);
 
-            if (cookieName == id) {
-                return cookieValue;
+                if (cookieName == id) {
+                    return cookieValue;
+                }
+            }
+
+            return null;
+        }
+
+        function checkCookie() {
+            return getCookieById('ticket');
+        }
+
+        function widget() {
+            ticket = checkCookie();
+            if (ticket == null || ticket == '') {
+                setTimeout(widget, 500);
+            } else {
+                document.cookie = "ticket=;";
+                //window.location.href = "/spineauth/{{ fields.id }}/{{ fields.username }}/" + encodeURI(ticket);
+                post('/spineauth', {id: '{{ fields.id }}', username: '{{ fields.username }}', ticket: ticket});
             }
         }
 
-        return null;
-    }
+        function post(path, params, method) {
+            method = method || "post"; // Set method to post by default if not specified.
 
-    function checkCookie() {
-        return getCookieById('ticket');
-    }
+            // The rest of this code assumes you are not using a library.
+            // It can be made less wordy if you use one.
+            var form = document.createElement("form");
+            form.setAttribute("method", method);
+            form.setAttribute("action", path);
 
-    function widget() {
-        ticket = checkCookie();
-        if (ticket == null || ticket == '') {
-            setTimeout(widget, 500);
-        } else {
-            document.cookie = "ticket=;";
-            //window.location.href = "/spineauth/{{ fields.id }}/{{ fields.username }}/" + encodeURI(ticket);
-            post('/spineauth', {id: '{{ fields.id }}', username: '{{ fields.username }}', ticket: ticket});
-        }
-    }
+            for(var key in params) {
+                if(params.hasOwnProperty(key)) {
+                    var hiddenField = document.createElement("input");
+                    hiddenField.setAttribute("type", "hidden");
+                    hiddenField.setAttribute("name", key);
+                    hiddenField.setAttribute("value", params[key]);
 
-    function post(path, params, method) {
-        method = method || "post"; // Set method to post by default if not specified.
+                    form.appendChild(hiddenField);
+                 }
+            }
 
-        // The rest of this code assumes you are not using a library.
-        // It can be made less wordy if you use one.
-        var form = document.createElement("form");
-        form.setAttribute("method", method);
-        form.setAttribute("action", path);
-
-        for(var key in params) {
-            if(params.hasOwnProperty(key)) {
-                var hiddenField = document.createElement("input");
-                hiddenField.setAttribute("type", "hidden");
-                hiddenField.setAttribute("name", key);
-                hiddenField.setAttribute("value", params[key]);
-
-                form.appendChild(hiddenField);
-             }
+            document.body.appendChild(form);
+            form.submit();
         }
 
-        document.body.appendChild(form);
-        form.submit();
-    }
+        invokeApplet();
 
-    invokeApplet();
-
-    widget();
-</script>
-
+        widget();
+    </script>
+{% endblock %}

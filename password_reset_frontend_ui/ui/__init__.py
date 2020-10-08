@@ -227,12 +227,12 @@ def reset():
         return fields_render('failed', fields={'message': 'No response from server, please contact a system administrator'})
 
 def basic_render(step):
-    body = render_template('%s.html' % step)
-    return render_template('index.html', body=body)
+    return render_template('%s.html' % step)
+    #return render_template('index.html', body=body)
 
 def fields_render(step, fields):
-    body = render_template('%s.html' % step, fields=fields)
-    return render_template('index.html', body=body)
+    return render_template('%s.html' % step, fields=fields)
+    #return render_template('index.html', body=body)
 
 def get_new_id():
     return ''.join([random.choice(string.ascii_letters + string.digits) for n in range(12)])

@@ -1,9 +1,12 @@
-<label style="visibility: hidden; display: none; height: 0px;" id="pageTitle"
-       title="Your registration is complete"></label>
+{% extends "index.html" %}
 
-<p>You can now user this service to recover your account in future.</p>
+{% block title %}Registration successful{% endblock %}
+{% block heading %}Your registration is complete{% endblock %}
 
-<div class="navbuttons">
-<button class="btn" onclick="protoNavAction(this)" value="">Go back to the Start</button>
-</div>
+{% block content %}
+    <p>You can now user this service to recover your account in future.</p>
 
+    <div class="navbuttons">
+    <button class="btn" onclick="protoNavAction(this)" value="">Go back to the start</button>
+    </div>
+{% endblock %}

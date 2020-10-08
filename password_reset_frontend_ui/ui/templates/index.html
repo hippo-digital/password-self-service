@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title></title>
+	<title>{% block title %}{% endblock %}</title>
 	<meta charset="utf-8">
 	<meta name="description" content="">
 	<meta name="author" content="">
@@ -36,9 +36,9 @@
 
 <div id="bodywrap">
 	<div class="body">
-		<h2 id="pageTitleText">Recover your login account</h2>
+		<h2 id="pageTitleText">{% block heading %}Recover your login account{% endblock %}</h2>
 
-		{{ body | safe }}
+		{% block content %}{% endblock %}
 
 	</div>
 </div>
