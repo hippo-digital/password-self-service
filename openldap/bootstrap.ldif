@@ -1,0 +1,4 @@
+dn: OU=NewTestOU,DC=hd,DC=local
+changetype: add
+objectclass: organizationalUnit
+ou: NewTestOU

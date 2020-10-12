@@ -1,0 +1,14 @@
+dn: CN=test,OU=NewTestOU,DC=hd,DC=local
+changetype: add
+objectclass: user
+cn: test
+givenname: test
+sn: user
+displayname: Test User
+mail: testuser@gmail.com
+sAMAccountName: test
+userpassword: password123
+mobile: 07884233467
+pager: pwd:0:07884233467
+objectCategory: cn=user,cn=schema,cn=config
+lockoutTime: 12345
