@@ -24,14 +24,14 @@ services:
       - "5002:5002"
     depends_on:
       - redis
-  backend:
-    build: password_reset_backend/
-    image: pss-backend
-    platform: linux
-    depends_on:
-      - redis
-      - rec
-      - ldap
+#  backend:
+#    build: password_reset_backend/
+#    image: pss-backend
+#    platform: linux
+#    depends_on:
+#      - redis
+#      - rec
+#      - ldap
   ui:
     build: password_reset_frontend_ui/
     image: pss-ui
