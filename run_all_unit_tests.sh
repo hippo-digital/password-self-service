@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export DOCKER_HOST=$DOCKER_HOST
+
 RES=0
 docker-compose build &>/dev/null
 
