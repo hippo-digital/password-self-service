@@ -1,11 +1,14 @@
 import redis
-
+import fakeredis
 
 class storage:
     __redisconnection = None
 
-    def __init__(self, address='localhost', port=6379, db=0):
-        storage.__redisconnection = redis.StrictRedis(host=address, port=port, db=db, decode_responses=True)
+    def __init__(self, address='localhost', port=6379, db=0, fake=False):
+        if fake:
+            storage.__redisconnection = fakeredis.FakeStrictRedis()
+        else:
+            storage.__redisconnection = redis.StrictRedis(host=address, port=port, db=db, decode_responses=True)
 
     def get(key):
         return storage.__redisconnection.get(key)
@@ -33,7 +36,12 @@ class storage:
         return int(storage.hget(key, field)) #.decode('utf-8'))
 
     def lpop(key):
-        return storage.__redisconnection.lpop(key)
+        result = storage.__redisconnection.lpop(key)
+
+        if isinstance(result, bytes):
+            result = result.decode()
+
+        return result
 
     def hset(key, field, value):
         storage.__redisconnection.hset(key, field, value)

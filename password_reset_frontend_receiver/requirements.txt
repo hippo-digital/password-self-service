@@ -1,4 +1,4 @@
 flask
-pycrypto
 redis
-
+pycryptodome
+fakeredis

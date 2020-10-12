@@ -1,0 +1,44 @@
+version: '3'
+services:
+  ldap:
+    build: openldap/
+    image: pss-ldap
+    platform: linux
+    ports:
+      - "389:389"
+      - "636:636"
+    hostname: "ldap"
+    environment:
+      LDAP_TLS: "true"
+      LDAP_TLS_VERIFY_CLIENT: "try"
+  redis:
+    image: redis
+    platform: linux
+  rec:
+    build: password_reset_frontend_receiver/
+    image: pss-rec
+    platform: linux
+    environment:
+      - REDIS_HOST=redis
+    ports:
+      - "5002:5002"
+    depends_on:
+      - redis
+  backend:
+    build: password_reset_backend/
+    image: pss-backend
+    platform: linux
+    depends_on:
+      - redis
+      - rec
+      - ldap
+  ui:
+    build: password_reset_frontend_ui/
+    image: pss-ui
+    platform: linux
+    environment:
+      - REDIS_HOST=redis
+    ports:
+      - "5001:5001"
+    depends_on:
+      - redis

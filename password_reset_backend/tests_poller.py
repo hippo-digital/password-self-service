@@ -90,7 +90,7 @@ class tests_poller(unittest.TestCase):
                         mocked_sms.assert_called()
                         called_args = mocked_sms.call_args_list[0][0]
 
-                        self.assertEqual('123456', called_args[0])
+                        self.assertEqual('+447784123456', called_args[0])
                         self.assertEqual(10, len(called_args[1]))
 
     def test__poll__whenCalled__callsRequestsURL(self):
@@ -110,7 +110,7 @@ class tests_poller(unittest.TestCase):
             from ad_connector import search_object
 
             so = search_object.search_object()
-            so.search('test_cn', 'test_domain')
+            so.search('test_cn', 'test_domain', 'test_host')
             None
 
     def test__poll__whenSingleRequestForCodeRetrieved__calls_send_sms(self):
@@ -156,18 +156,30 @@ class tests_poller(unittest.TestCase):
 
         p = poller.poller()
 
-        with mock.patch('poller.poller.unwrap_request', return_value={'password': '123'}) as mocked_evidence:
-            with mock.patch('ldap3.Connection.bind', return_value=True):
-                with mock.patch('ldap3.Connection.search', autospec=True, entries=[user_obj()], bound=True,
-                                return_value=wibble()) as ldap_conn:
-                    p.get_user_details(test_request)
+        with mock.patch('poller.poller.unwrap_request', return_value={'password': '123'}):
+            with mock.patch('ldap3.core.connection.Connection.bind', return_value=True):
+                with mock.patch('ldap3.core.connection.Connection.search', new=mocksearch):
+                    with mock.patch('requests.post') as post_request:
+                        p.get_user_details(test_request)
+                        post_request.assert_called()
 
 
 class user_obj:
     def __init__(self):
         self.entry_dn = ''
-        self.entry_attributes_as_dict = {'sn': ['Smith'], 'givenName': ['Sandra'], 'mail': ['sandra.smith@example.org'], 'mobile': ['123456']}
+        self.entry_attributes_as_dict = {'sn': ['Smith'], 'givenName': ['Sandra'], 'mail': ['sandra.smith@example.org'], 'mobile': ['123456'], 'pager': 'pwd::+447784123456'}
+
+    def __getitem__(self, key):
+        return self.entry_attributes_as_dict.get(key, None)
+
+    def __setitem__(self, key, value):
+        self.entry_attributes_as_dict[key] = value
+
+def mocksearch(self, a, b, attributes):
+    self._entries = [user_obj()]
+    return [{'sn': 'Smith', 'givenName': 'Sandra', 'mail': 'sandra.smith@example.org', 'mobile': '123456', 'distinguishedName': ['CN=Sandra.Smith,OU=Users,DC=example,DC=com'], 'pager': 'pwd::+447784123456'}]
+
 
 class wibble:
-    def search(self, a, b):
-        return [{'sn': 'Smith', 'givenName': 'Sandra', 'mail': 'sandra.smith@example.org', 'mobile': '123456', 'distinguishedName': ['CN=Sandra.Smith,OU=Users,DC=example,DC=com']}]
+    def search(self, a, b, c):
+        return [{'sn': 'Smith', 'givenName': 'Sandra', 'mail': 'sandra.smith@example.org', 'mobile': '123456', 'distinguishedName': ['CN=Sandra.Smith,OU=Users,DC=example,DC=com'], 'pager': 'pwd::+447784123456'}]

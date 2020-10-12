@@ -8,13 +8,12 @@ import base64
 import ui
 import mock
 
-
 class tests(unittest.TestCase):
     def setUp(self):
         random_generator = Random.new().read
         # self.test_random_private_key = RSA.generate(2048, random_generator)
         # self.test_random_public_key = self.test_random_private_key.publickey()
-        storage(db = 3)
+        storage(fake=True)
         ui.redis_db = 3
         self.app = ui.app.test_client()
 
@@ -44,6 +43,7 @@ class tests(unittest.TestCase):
         hZuRK6SD9lV4MFl+1H1igBqHVUj5t2zTqNDAxoh13HqpxxxH4GIn0SWbZBNbLfcO
         KjiITfQGNThfsTh2/1HPl6A61E4Iw2G+xGXuy0O/IvYvwBNwveE="""
         self.test_private_key = RSA.importKey(base64.b64decode(self.b64_private_key))
+        self.decryptor = PKCS1_OAEP.new(self.test_private_key)
 
         self.b64_public_key = """MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApaaE3Bu5pBEbFQ67rXzv
         rwwya7VKfPyF6gxw4s/FSmuO2olqvmHpxOLvOvY5YsAjARM1oI0PZ4dv4OsTpHsC
@@ -53,6 +53,7 @@ class tests(unittest.TestCase):
         oNAVu8TWDBLKUhVk+cL3TMk8eYCM8LQCLMqveCdGEJ4J8rHop/lFVqA2OLItvb/z
         jQIDAQAB"""
         self.test_public_key = RSA.importKey(base64.b64decode(self.b64_public_key))
+        self.encryptor = PKCS1_OAEP.new(self.test_public_key)
 
         self.test_evidence = 'gM9LIB7VBHBiVYqpr3l54st76Rwk5R_-sr4xdHpNiPH6RE2K6lrg3eeqa9VdpwXf0tr9UsO27HqVmuLbFQek6mUqwT-2UFgtAnzAwcCy9pBklJSjTwrIM-sdGkXDA6_1qUw5LcWCMsSU__vQb831Dbn10UIWJx4nyhbUukmp6gasiZlzI3al3zusi9zQp4oLDdxVPrdcT6ncgk0C3KQnr33AD0Kbib6akrbWtcwh6_lBD9fvZfA2btGarIkP0RtY9b2pTrGFy5ZKG42z5O2Tr_gtyLPsrSF4kCmH6INtvKicKtRdpPUiz9iXAHA0hceUNlFzyAhwc3eSCgNkG5JXXg==.JgrR-t1myDwn-Na9kZey1D9r2cXdDw_TeiFp-2t9TV_70HCYO-FhXHBVnFVPdOYbM2QkUeGk7yyATmszOgNGK3jSScpBZJy7E01cq_ZGa0DQR0YMlpasHAlQX5iHpSNijENbKMtZ9dpsoRiWZfBteieei_n_v6s94o0mk-SHNzOMSTQNrp01Omz8Anh7Ae9Z'
 
@@ -88,18 +89,20 @@ class tests(unittest.TestCase):
         to_encrypt = 'abcdefgh'.encode('utf-8')
 
         public_key = key.publickey()
-        enc_data = public_key.encrypt(to_encrypt, random_generator)
+        encryptor = PKCS1_OAEP.new(public_key)
+        enc_data = encryptor.encrypt(to_encrypt)
 
-        dec_data = key.decrypt(enc_data)
+        decryptor = PKCS1_OAEP.new(key)
+        dec_data = decryptor.decrypt(enc_data)
 
         self.assertEqual(dec_data, to_encrypt)
 
     def test_cryptoPublicToPrivate_usingTestKeyPair(self):
         random_generator = Random.new().read
         to_encrypt = 'abcdefgh'.encode('utf-8')
-        enc_data = self.test_public_key.encrypt(to_encrypt, random_generator)
+        enc_data = self.encryptor.encrypt(to_encrypt)
 
-        dec_data = self.test_private_key.decrypt(enc_data)
+        dec_data = self.decryptor.decrypt(enc_data)
 
         self.assertEqual(dec_data, to_encrypt)
 
@@ -155,9 +158,8 @@ class tests(unittest.TestCase):
 
         b64_encrypted_request = storage.lpop('requests')
 
-        if b64_encrypted_request == None:
+        if b64_encrypted_request is None:
             self.fail('No request was stored')
-            return
 
         request = self.unwrap_request(b64_encrypted_request)
 

@@ -280,6 +280,4 @@ backend_wait_time_seconds = 30
 
 log = logging.getLogger('password_reset_frontend')
 
-storage(db = redis_db)
-
-
+storage(db = redis_db, address=os.getenv('REDIS_HOST', 'localhost'))

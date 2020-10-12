@@ -5,6 +5,7 @@ from Crypto import Random
 from storage import storage
 import base64
 import receiver
+import os
 
 
 class tests(unittest.TestCase):
@@ -12,7 +13,7 @@ class tests(unittest.TestCase):
         random_generator = Random.new().read
         self.test_private_key = RSA.generate(2048, random_generator)
         self.test_public_key = self.test_private_key.publickey()
-        storage(db = 3)
+        storage(fake=True)
         receiver.redis_db = 3
         self.app = receiver.app.test_client()
 

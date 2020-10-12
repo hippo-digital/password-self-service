@@ -35,8 +35,9 @@ class poller():
         self.config = self.loadconfig('config.yml')
 
         self.domain_dn_list = self.config['directory']['dn_list']
-        self.domain_fqdn = self.config['directory']['fqdn']
+        self.domain_fqdn = os.getenv('AD_HOST', self.config['directory']['fqdn']).strip()
         self.auth_service_validate_ticket_uri = '%s/amserver/sessionservice' % self.config['auth_service']['address']
+        self.frontend_addr = os.getenv('FRONTEND', self.config['frontend']['address']).strip()
 
         self.log.info('Configuration: %s' % self.config)
 
@@ -46,7 +47,7 @@ class poller():
     def poll(self):
         reqs = {}
         try:
-            req = requests.get('%s/requests' % self.config['frontend']['address'])
+            req = requests.get('%s/requests' % self.frontend_addr)
 
             if req.status_code == 200:
                 result_raw = req.content.decode('utf-8')
@@ -128,14 +129,14 @@ class poller():
 
         try:
             self.log.info('Method=send_code, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn_list))
-            users = q.search(username, self.domain_dn_list)
+            users = q.search(username, self.domain_dn_list, self.domain_fqdn)
         except Exception as ex:
             self.log.error('Method=send_code, Message=Error searching for user, Username=%s' % username)
             self.log.exception(ex)
 
-        if len(users) == 0:
+        if users is None or len(users) == 0:
             self.log.info('Method=send_code, Message=User could not be found in the directory, Username=%s' % username)
-            requests.post('%s/coderesponse/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'User account could not be found'}))
+            requests.post('%s/coderesponse/%s/Failed' % (self.frontend_addr, id), data=json.dumps({'status': 'Failed', 'message': 'User account could not be found'}))
         elif len(users) == 1 and 'mobile' in users[0]:
             user = users[0]
             pager = user['pager'].split(':')
@@ -160,7 +161,7 @@ class poller():
 
             try:
                 code_hash = self.generate_code_hash(username, raw_code, id)
-                requests.post('%s/coderesponse/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'OK', 'code_hash': code_hash}))
+                requests.post('%s/coderesponse/%s/OK' % (self.frontend_addr, id), data=json.dumps({'status': 'OK', 'code_hash': code_hash}))
             except Exception as ex:
                 self.log.exception('Method=send_code, Message=Error setting status on frontend, Username=%s, Code=%s' % (username, code))
         else:
@@ -210,19 +211,19 @@ class poller():
             if not conn.bind():
                 if conn.result['description'] == 'invalidCredentials':
                     self.log.warning('Method=set_user_details, Message=Incorrect password supplied, Request=%s' % reset_request)
-                    requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'The supplied password was incorrect'}))
+                    requests.post('%s/setuserdetails/%s/Failed' % (self.frontend_addr, id), data=json.dumps({'status': 'Failed', 'message': 'The supplied password was incorrect'}))
                 else:
                     self.log.warning('Method=set_user_details, Message=Other error occurred, Result=%s, Request=%s' % (conn.result, reset_request))
-                    requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'An unspecified error occurred'}))
+                    requests.post('%s/setuserdetails/%s/Failed' % (self.frontend_addr, id), data=json.dumps({'status': 'Failed', 'message': 'An unspecified error occurred'}))
                 return
 
             if len(uid) != 0 and (len(uid) != 12 or not uid.isnumeric()):
                 self.log.warning('Method=set_user_details, Message=UID field was invalid, Request=%s' % reset_request)
-                requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'The UID field was invalid'}))
+                requests.post('%s/setuserdetails/%s/Failed' % (self.frontend_addr, id), data=json.dumps({'status': 'Failed', 'message': 'The UID field was invalid'}))
 
             if len(mobile) != 0 and (len(mobile) != 13 or not mobile.startswith('+447') or not mobile[1:].isnumeric()):
                 self.log.warning('Method=set_user_details, Message=Mobile number field was invalid, Request=%s' % reset_request)
-                requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id),
+                requests.post('%s/setuserdetails/%s/Failed' % (self.frontend_addr, id),
                               data=json.dumps({'status': 'Failed', 'message': 'The mobile number field was invalid'}))
 
             pager_field = 'pwd:%s:%s' % (uid, mobile)
@@ -231,10 +232,10 @@ class poller():
 
             if conn.result['description'] == 'success':
                 self.log.info('Method=set_user_details, Message=Successfully set attributes, Attributes=%s, Request=%s' % ({'mobile': mobile, 'pager': uid}, reset_request))
-                requests.post('%s/setuserdetails/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'OK'}))
+                requests.post('%s/setuserdetails/%s/OK' % (self.frontend_addr, id), data=json.dumps({'status': 'OK'}))
             else:
                 self.log.warning('Method=set_user_details, Message=Other error occurred, Result=%s, Request=%s' % (conn.result, reset_request))
-                requests.post('%s/setuserdetails/%s/Failed' % (self.config['frontend']['address'], id),
+                requests.post('%s/setuserdetails/%s/Failed' % (self.frontend_addr, id),
                               data=json.dumps({'status': 'Failed', 'message': 'An unspecified error occurred'}))
 
             conn.unbind()
@@ -259,10 +260,13 @@ class poller():
 
             user = self.get_user(username)
 
-            if user == None:
+            if user is None:
                 self.log.warning('Method=get_user_details, Message=User account could not be found, Request=%s' % reset_request)
-                requests.post('%s/getuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'The specified user account could not be found'}))
+                requests.post('%s/getuserdetails/%s/Failed' % (self.frontend_addr, id), data=json.dumps({'status': 'Failed', 'message': 'The specified user account could not be found'}))
                 return
+
+            if user['distinguishedName'] is None:
+                user['distinguishedName'] = "CN=%s,%s" % (username, self.domain_dn_list[1])
 
             server = Server(self.domain_fqdn, get_info=ALL, port=636, use_ssl=True)
             conn = Connection(server, user=user['distinguishedName'], password=password)
@@ -270,10 +274,10 @@ class poller():
             if not conn.bind():
                 if conn.result['description'] == 'invalidCredentials':
                     self.log.warning('Method=get_user_details, Message=Incorrect password supplied, Request=%s' % reset_request)
-                    requests.post('%s/getuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'The supplied password was incorrect'}))
+                    requests.post('%s/getuserdetails/%s/Failed' % (self.frontend_addr, id), data=json.dumps({'status': 'Failed', 'message': 'The supplied password was incorrect'}))
                 else:
                     self.log.warning('Method=get_user_details, Message=Other error occurred, Result=%s, Request=%s' % (conn.result, reset_request))
-                    requests.post('%s/getuserdetails/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'Failed', 'message': 'An unspecified error occurred'}))
+                    requests.post('%s/getuserdetails/%s/Failed' % (self.frontend_addr, id), data=json.dumps({'status': 'Failed', 'message': 'An unspecified error occurred'}))
                 return
 
             search_result = conn.search(conn.user, '(objectClass=user)', attributes=['pager', 'mobile'])
@@ -295,7 +299,7 @@ class poller():
                     attributes['mobile'] = conn.entries[0].entry_attributes_as_dict['mobile'][0]
 
                 self.log.info('Method=get_user_details, Message=Retrieved and returning attributes, Attributes=%s, Request=%s' % (attributes, reset_request))
-                requests.post('%s/getuserdetails/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps(attributes))
+                requests.post('%s/getuserdetails/%s/OK' % (self.frontend_addr, id), data=json.dumps(attributes))
                 conn.unbind()
         else:
             self.log.error('Method=get_user_details, Message=Called with incomplete set of fields, Request=%s' % reset_request)
@@ -329,7 +333,7 @@ class poller():
                 verified = self.check_code(id, username, code, code_hash)
 
                 if not verified:
-                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                    requests.post('%s/resetresponse/%s/Failed' % (self.frontend_addr, id),
                                   data=json.dumps({'status': 'Failed', 'message': 'The reset code supplied was incorrect'}))
             elif 'ticket' in evidence:
 
@@ -338,49 +342,49 @@ class poller():
                 try:
                     verified = self.verify_ticket(username, ticket)
                 except UserDoesNotExistException as ex:
-                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                    requests.post('%s/resetresponse/%s/Failed' % (self.frontend_addr, id),
                                   data=json.dumps(
                                       {'status': 'Failed',
                                        'message': 'The user does not exist in the directory'}))
                     return
                 except CannotConnectToSpineAuthenticationException as ex:
-                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                    requests.post('%s/resetresponse/%s/Failed' % (self.frontend_addr, id),
                                   data=json.dumps(
                                       {'status': 'Failed',
                                        'message': 'Failed to connect to Spine authentication service'}))
                     return
 
                 if not verified:
-                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                    requests.post('%s/resetresponse/%s/Failed' % (self.frontend_addr, id),
                                   data=json.dumps({'status': 'Failed', 'message': 'There was a problem validating your Smartcard'}))
 
             if verified:
                 try:
                     self.reset_ad_password(username, password)
-                    requests.post('%s/resetresponse/%s/OK' % (self.config['frontend']['address'], id), data=json.dumps({'status': 'OK'}))
+                    requests.post('%s/resetresponse/%s/OK' % (self.frontend_addr, id), data=json.dumps({'status': 'OK'}))
                 except ComplexityNotMetException:
-                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                    requests.post('%s/resetresponse/%s/Failed' % (self.frontend_addr, id),
                                   data=json.dumps({'status': 'Failed',
                                                    'message': 'Password does not meet complexity requirements'}))
                 except ComplexityNotMetException:
-                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                    requests.post('%s/resetresponse/%s/Failed' % (self.frontend_addr, id),
                                   data=json.dumps(
                                       {'status': 'Failed',
                                        'message': 'Password does not meet complexity requirements'}))
                 except UserDoesNotExistException:
-                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                    requests.post('%s/resetresponse/%s/Failed' % (self.frontend_addr, id),
                                   data=json.dumps(
                                       {'status': 'Failed',
                                        'message': 'The user does not exist in the directory'}))
                 except CannotConnectToDirectoryException:
-                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id),
+                    requests.post('%s/resetresponse/%s/Failed' % (self.frontend_addr, id),
                                   data=json.dumps(
                                       {'status': 'Failed', 'message': 'Could not connect to the directory'}))
                 except AccessIsDeniedException:
-                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps(
+                    requests.post('%s/resetresponse/%s/Failed' % (self.frontend_addr, id), data=json.dumps(
                         {'status': 'Failed', 'message': 'The account could not be reset due to a permissions issue'}))
                 except Exception:
-                    requests.post('%s/resetresponse/%s/Failed' % (self.config['frontend']['address'], id), data=json.dumps(
+                    requests.post('%s/resetresponse/%s/Failed' % (self.frontend_addr, id), data=json.dumps(
                         {'status': 'Failed', 'message': 'The account could not be reset due to an undetermined issue'}))
             else:
                 raise(Exception())
@@ -436,11 +440,11 @@ class poller():
 
         try:
             self.log.info('Method=get_user, Message=Searching for user, Username=%s, DN=%s' % (username, self.domain_dn_list))
-            users = q.search(username, self.domain_dn_list)
+            users = q.search(username, self.domain_dn_list, self.domain_fqdn)
         except Exception as ex:
             self.log.exception('Method=get_user, Message=Error searching for user, Username=%s' % username)
 
-        if len(users) == 1:
+        if users is not None and len(users) == 1:
             return users[0]
 
         return None
@@ -457,7 +461,7 @@ class poller():
             self.log.exception('Method=reset_ad_password, Message=Failed search for user in AD')
 
         try:
-            users = q.search(username, self.domain_dn_list)
+            users = q.search(username, self.domain_dn_list, self.domain_fqdn)
         except pywintypes.com_error as ex:
             if 'referral was returned' in ex.excepinfo[2]:
                 raise(CannotConnectToDirectoryException)
@@ -471,6 +475,9 @@ class poller():
             raise(UserDoesNotExistException)
 
         user = users[0]
+
+        if user['distinguishedName'] is None:
+            user['distinguishedName'] = "CN=%s,%s" % (username, self.domain_dn_list[1])
 
         try:
             pwd = set_password.set_password()
