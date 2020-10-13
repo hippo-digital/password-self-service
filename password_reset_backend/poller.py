@@ -265,11 +265,13 @@ class poller():
                 requests.post('%s/getuserdetails/%s/Failed' % (self.frontend_addr, id), data=json.dumps({'status': 'Failed', 'message': 'The specified user account could not be found'}))
                 return
 
-            if user['distinguishedName'] is None:
-                user['distinguishedName'] = "CN=%s,%s" % (username, self.domain_dn_list[1])
+            if 'distinguishedName' in user:
+                userdn = user['distinguishedName']
+            else:
+                userdn = "CN=%s,%s" % (username, self.domain_dn_list[1])
 
             server = Server(self.domain_fqdn, get_info=ALL, port=636, use_ssl=True)
-            conn = Connection(server, user=user['distinguishedName'], password=password)
+            conn = Connection(server, user=userdn, password=password)
 
             if not conn.bind():
                 if conn.result['description'] == 'invalidCredentials':
@@ -283,7 +285,7 @@ class poller():
             search_result = conn.search(conn.user, '(objectClass=user)', attributes=['pager', 'mobile'])
 
             if search_result:
-                attributes = {'status': 'OK', 'dn': user['distinguishedName'], 'mobile': '', 'uid': ''}
+                attributes = {'status': 'OK', 'dn': userdn, 'mobile': '', 'uid': ''}
                 if len(conn.entries[0].entry_attributes_as_dict['pager']) == 1:
                     pager_field = conn.entries[0].entry_attributes_as_dict['pager'][0]
 
@@ -476,12 +478,14 @@ class poller():
 
         user = users[0]
 
-        if user['distinguishedName'] is None:
-            user['distinguishedName'] = "CN=%s,%s" % (username, self.domain_dn_list[1])
+        if 'distinguishedName' in user:
+            userdn = user['distinguishedName']
+        else:
+            userdn = "CN=%s,%s" % (username, self.domain_dn_list[1])
 
         try:
             pwd = set_password.set_password()
-            pwd.set(user['distinguishedName'], user['distinguishedName'], self.config['directory']['fqdn'], password=new_password)
+            pwd.set(userdn, userdn, self.config['directory']['fqdn'], password=new_password)
         except pyadexceptions.win32Exception as ex:
             if ex.error_info['error_code'] == '0x80070005':
                 raise(AccessIsDeniedException)

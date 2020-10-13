@@ -91,11 +91,15 @@ def register3():
 
     if 'status' in res:
         if res['status'] == 'OK':
-            return basic_render('register_complete')
+            return redirect('/register_complete')
         else:
             return fields_render('failed', fields={'message': res['message']})
     else:
         return fields_render('failed', fields={'message': 'No response from server, please contact a system administrator'})
+
+@app.route('/register_complete', methods=['GET'])
+def register_complete():
+    return basic_render('register_complete')
 
 @app.route('/reset_method', methods=['POST'])
 def reset_method():

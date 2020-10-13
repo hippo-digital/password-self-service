@@ -19,7 +19,7 @@ services:
     image: pss-rec
     platform: linux
     environment:
-      - REDIS_HOST=redis
+      REDIS_HOST: redis
     ports:
       - "5002:5002"
     depends_on:
@@ -28,6 +28,10 @@ services:
 #    build: password_reset_backend/
 #    image: pss-backend
 #    platform: linux
+#    environment:
+#      LOG_STDOUT: "true"
+#      FRONTEND: http://rec:5002
+#      AD_HOST: ldap
 #    depends_on:
 #      - redis
 #      - rec
@@ -37,7 +41,7 @@ services:
     image: pss-ui
     platform: linux
     environment:
-      - REDIS_HOST=redis
+      REDIS_HOST: redis
     ports:
       - "5001:5001"
     depends_on:

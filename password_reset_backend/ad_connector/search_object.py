@@ -29,14 +29,24 @@ else:
     import ldap3
 
     class search_object:
-        def search(self, object_cn, domain_dn, servername):
+        def search(self, object_cn, domain_dn_list, servername):
             server = ldap3.Server(servername)
             conn = ldap3.Connection(server, user='HD\\Administrator', password='Password123!')
             res = conn.bind()
 
-            conn.search(domain_dn, '(&(objectClass=person)(cn=%s))' % object_cn, attributes=ldap3.ALL_ATTRIBUTES)
+            results = []
 
-            return conn.entries
+            for domain_dn in domain_dn_list:
+                try:
+                    conn.search(domain_dn, '(&(objectClass=person)(cn=%s))' % object_cn,
+                                attributes=ldap3.ALL_ATTRIBUTES)
+
+                    for row in conn.entries:
+                        results.append(row)
+                except:
+                    pass
+
+            return results
 
         def get_ldap_connection(server_details):
             server = ldap3.Server(server_details['server'])
