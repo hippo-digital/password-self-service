@@ -175,8 +175,15 @@ class user_obj:
     def __setitem__(self, key, value):
         self.entry_attributes_as_dict[key] = value
 
+    def __contains__(self, item):
+        return item in self.entry_attributes_as_dict
+
 def mocksearch(self, a, b, attributes):
-    self._entries = [user_obj()]
+    if a == 'OU=NewTestOU,DC=hd,DC=local' or a == 'CN=test_user,OU=NewTestOU,DC=hd,DC=local':
+        self._entries = [user_obj()]
+    else:
+        self._entries = []
+
     return [{'sn': 'Smith', 'givenName': 'Sandra', 'mail': 'sandra.smith@example.org', 'mobile': '123456', 'distinguishedName': ['CN=Sandra.Smith,OU=Users,DC=example,DC=com'], 'pager': 'pwd::+447784123456'}]
 
 
